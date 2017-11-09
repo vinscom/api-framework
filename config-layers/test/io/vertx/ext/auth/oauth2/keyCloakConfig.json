@@ -1,0 +1,11 @@
+{
+  "realm": "APIGateway",
+  "auth-server-url": "http://openidserver:8080/auth",
+  "realm-public-key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoGjNGY2CL4avkcPIcjGQQ7iHuuRCTgU3H6SxA5c23q5FBJasG+sGndqBgRg1SJ2rrJotCsEUgi82gqh2aMtjuRH4D1gGLK5/foI6tbJf1qYDxHfSZZTKHAuiiOwkxoyMbFMvNl/3ZPu0MgfT8uXcU3y06mAdpkPFsQ2ye9nz/iO/bMJnttHsPvwwKBSRR8Oj3O4cwLqwvbOA0IMft4g9So4Edu7Gg9Pk5IyREJW8cMa8r6USS2HlhkLeLyJCfBHAb9EcKfo9fPQ1nYlRf3utxfeR+5SnWFxy7/thoblY1maE1vhwXbnpHdE3RsPoEc6PnNQnq16ovpxQaR7MeJ5mjwIDAQAB",
+  "ssl-required": "external",
+  "resource": "test_erail_in",
+  "credentials": {
+    "secret": "1a8d220b-744d-47e7-b3ab-417b79595c15"
+  },
+  "policy-enforcer": {}
+}
