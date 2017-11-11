@@ -3,12 +3,16 @@ package io.vertx.reactivex.ext.web.handler.sockjs;
 import in.erail.common.FramworkConstants;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
+import java.util.List;
 
 /**
  *
  * @author vinay
  */
-public class DefaultBridgeEventHandler implements Handler<BridgeEvent> {
+public class BridgeEventHandler implements Handler<BridgeEvent> {
+
+  private List<String> mAddressAllowedToRegister;
+  private List<String> mAddressAllowedToRegisterRegex;
 
   @Override
   public void handle(BridgeEvent pEvent) {
@@ -52,15 +56,52 @@ public class DefaultBridgeEventHandler implements Handler<BridgeEvent> {
 
   }
 
+  public void handleRegister(String pAddress, BridgeEvent pEvent) {
+    if (mAddressAllowedToRegister.isEmpty() && mAddressAllowedToRegisterRegex.isEmpty()) {
+      pEvent.complete(true);
+      return;
+    }
+
+    if (!(matchAddress(pAddress) || matchAddressRegex(pAddress))) {
+      pEvent.fail("Can't subscribe to topic : " + pAddress);
+    } else {
+      pEvent.complete(true);
+    }
+  }
+
+  private boolean matchAddress(String pAddress) {
+    return mAddressAllowedToRegister
+            .stream()
+            .anyMatch((allowedAddress) -> (pAddress.equals(allowedAddress)));
+  }
+
+  private boolean matchAddressRegex(String pAddress) {
+    return mAddressAllowedToRegisterRegex
+            .stream()
+            .anyMatch((allowedAddress) -> (pAddress.matches(allowedAddress)));
+  }
+
+  public List<String> getAddressAllowedToRegister() {
+    return mAddressAllowedToRegister;
+  }
+
+  public void setAddressAllowedToRegister(List<String> pAddressAllowedToRegister) {
+    this.mAddressAllowedToRegister = pAddressAllowedToRegister;
+  }
+
+  public List<String> getAddressAllowedToRegisterRegex() {
+    return mAddressAllowedToRegisterRegex;
+  }
+
+  public void setAddressAllowedToRegisterRegex(List<String> pAddressAllowedToRegisterRegex) {
+    this.mAddressAllowedToRegisterRegex = pAddressAllowedToRegisterRegex;
+  }
+
   public void handlePublish(String pAddress, BridgeEvent pEvent) {
     pEvent.complete(true);
   }
 
   public void handleRecieve(String pAddress, BridgeEvent pEvent) {
-    pEvent.complete(true);
-  }
-
-  public void handleRegister(String pAddress, BridgeEvent pEvent) {
     pEvent.complete(true);
   }
 
