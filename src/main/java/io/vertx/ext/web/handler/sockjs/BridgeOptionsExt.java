@@ -1,7 +1,10 @@
 package io.vertx.ext.web.handler.sockjs;
 
+import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import in.erail.glue.annotation.StartService;
 import java.util.List;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -9,6 +12,7 @@ import java.util.List;
  */
 public class BridgeOptionsExt extends BridgeOptions {
 
+  private Logger mLog;
   private List<String> mInboundAddress;
   private List<String> mOutboundAddress;
 
@@ -19,7 +23,20 @@ public class BridgeOptionsExt extends BridgeOptions {
   private List<String> mOutboundRequiredAuthority;
 
   @StartService
-  void start() {
+  public void start() {
+
+    getLog().debug(() -> {
+      return MoreObjects
+              .toStringHelper(BridgeOptionsExt.class.getCanonicalName())
+              .add("InboundAddress", Joiner.on(",").join(mInboundAddress))
+              .add("OutboundAddress", Joiner.on(",").join(mOutboundAddress))
+              .add("InboundAddressRegex", Joiner.on(",").join(mInboundAddressRegex))
+              .add("OutboundAddressRegex", Joiner.on(",").join(mOutboundAddressRegex))
+              .add("InboundRequiredAuthority", Joiner.on(",").join(mInboundRequiredAuthority))
+              .add("OutboundRequiredAuthority", Joiner.on(",").join(mOutboundRequiredAuthority))
+              .toString();
+    });
+
     getInboundAddress()
             .stream()
             .forEachOrdered((rule) -> {
@@ -115,6 +132,14 @@ public class BridgeOptionsExt extends BridgeOptions {
 
   public void setOutboundRequiredAuthority(List<String> pOutboundRequiredAuthority) {
     this.mOutboundRequiredAuthority = pOutboundRequiredAuthority;
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }
