@@ -19,7 +19,7 @@ public class VerticalDeployer {
     Arrays
             .stream(getVerticals())
             .forEach((path) -> {
-              AbstractVerticle av = Glue.instance().<AbstractVerticle>resolve(path, AbstractVerticle.class);
+              AbstractVerticle av = Glue.instance().<AbstractVerticle>resolve(path);
               getVertx().getDelegate().deployVerticle(av, getDeploymentOptions());
             });
   }

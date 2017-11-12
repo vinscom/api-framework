@@ -1,7 +1,6 @@
 package in.erail.service;
 
 import com.google.common.net.HttpHeaders;
-import in.erail.common.FramworkConstants;
 import in.erail.server.Server;
 import in.erail.test.TestConstants;
 import org.junit.Test;
@@ -30,7 +29,7 @@ public class BroadcastServiceTest {
 
     Async async = context.async(2);
 
-    Server server = Glue.instance().<Server>resolve("/in/erail/server/Server", Server.class);
+    Server server = Glue.instance().<Server>resolve("/in/erail/server/Server");
 
     //API Reply
     server.getVertx().eventBus().<JsonObject>consumer("testTopic", (event) -> {
