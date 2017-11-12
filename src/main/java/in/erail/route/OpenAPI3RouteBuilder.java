@@ -56,11 +56,11 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                                 .setStatusCode(200)
                                 .end(reply.result().body().toString());
                       } else {
-                        getLog().debug(() -> "Error in reply:" + reply.cause().toString());
+                        getLog().error(() -> "Error in reply:" + reply.cause().toString());
                         pRequestContext
                                 .response()
                                 .setStatusCode(400)
-                                .end();
+                                .end(reply.cause().toString());
                       }
                     });
 
