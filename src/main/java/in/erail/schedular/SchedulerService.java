@@ -5,6 +5,7 @@ import io.reactivex.Observable;
 import io.reactivex.Scheduler;
 import io.reactivex.schedulers.Schedulers;
 import java.util.concurrent.TimeUnit;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -12,13 +13,14 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class SchedulerService {
 
+  private Logger mLog;
   private SchedulerType mSchedularType;
   private TimeUnit mTimeUnit;
   private long mInterval;
   private boolean mRecurring;
 
   @StartService
-  void start() {
+  public void start() {
 
     Scheduler scheduler;
 
@@ -83,6 +85,14 @@ public abstract class SchedulerService {
 
   public void setRecurring(boolean pRecurring) {
     this.mRecurring = pRecurring;
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }
