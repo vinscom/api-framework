@@ -1,20 +1,22 @@
 package in.erail.route;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.net.HttpHeaders;
-import in.erail.service.Service;
-import in.erail.common.FramworkConstants;
-import io.vertx.core.eventbus.DeliveryOptions;
-import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.MultiMap;
-import io.vertx.reactivex.ext.web.Router;
-import io.vertx.reactivex.ext.web.RoutingContext;
-import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import in.erail.common.FramworkConstants;
 import in.erail.glue.component.ServiceArray;
+import in.erail.service.Service;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.json.JsonObject;
+import io.vertx.reactivex.core.MultiMap;
+import io.vertx.reactivex.core.http.HttpServerResponse;
+import io.vertx.reactivex.ext.web.Router;
+import io.vertx.reactivex.ext.web.RoutingContext;
+import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 
 /**
  *
@@ -27,7 +29,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
-  private String mAccessControlAllowOrigin = "*";
+  private boolean mAddAccessControlAllowOrigin;
+  private String mAccessControlAllowOrigin;
 
   public File getOpenAPI3File() {
     return mOpenAPI3File;
@@ -50,20 +53,16 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     getVertx()
             .eventBus()
             .send(pServiceUniqueId,
-                    convertContextIntoJson(pRequestContext),
+                    serialiseRoutingContext(pRequestContext),
                     getDeliveryOptions(),
                     (reply) -> {
                       if (reply.succeeded()) {
-                        pRequestContext
-                                .response()
-                                .putHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, getAccessControlAllowOrigin())
-                                .setStatusCode(200)
-                                .end(reply.result().body().toString());
+                        JsonObject response = (JsonObject) reply.result().body();
+                        buildResponseFromReply(response, pRequestContext).end();
                       } else {
                         getLog().error(() -> "Error in reply:" + reply.cause().toString());
                         pRequestContext
                                 .response()
-                                .putHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, getAccessControlAllowOrigin())
                                 .setStatusCode(400)
                                 .end(reply.cause().toString());
                       }
@@ -71,7 +70,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   }
 
-  public JsonObject convertContextIntoJson(RoutingContext pContext) {
+  public JsonObject serialiseRoutingContext(RoutingContext pContext) {
 
     JsonObject result = new JsonObject();
     result.put(FramworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
@@ -88,6 +87,32 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     getLog().debug(() -> "Context to JSON:" + result.toString());
 
     return result;
+  }
+
+  public HttpServerResponse buildResponseFromReply(JsonObject pReplyResponse, RoutingContext pContext) {
+
+    JsonObject body = pReplyResponse.getJsonObject(FramworkConstants.RoutingContext.Json.BODY, new JsonObject());
+    JsonObject headers = pReplyResponse.getJsonObject(FramworkConstants.RoutingContext.Json.HEADER, new JsonObject());
+    String statusCode = pReplyResponse.getString(FramworkConstants.RoutingContext.Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
+
+    headers
+            .fieldNames()
+            .stream()
+            .forEach((field) -> {
+              pContext.response().putHeader(field, headers.getString(field, ""));
+            });
+
+    if(isAddAccessControlAllowOrigin()){
+      pContext.response().putHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString(), getAccessControlAllowOrigin());
+    }
+    
+    pContext.response().setStatusCode(HttpResponseStatus.parseLine(statusCode).code());
+
+    String bodyStr = body.toString();
+    pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(bodyStr.length()));
+    pContext.response().write(body.toString());
+
+    return pContext.response();
   }
 
   public Map<String, Object> convertMultiMapIntoMap(MultiMap pMultiMap) {
@@ -137,14 +162,6 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     return apiFactory.getRouter();
   }
 
-  public String getAccessControlAllowOrigin() {
-    return mAccessControlAllowOrigin;
-  }
-
-  public void setAccessControlAllowOrigin(String pAccessControlAllowOrigin) {
-    this.mAccessControlAllowOrigin = pAccessControlAllowOrigin;
-  }
-
   public boolean isSecurityEnable() {
     return mSecurityEnable;
   }
@@ -162,4 +179,21 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
       getLog().error(ex);
     }
   }
+
+  public boolean isAddAccessControlAllowOrigin() {
+    return mAddAccessControlAllowOrigin;
+  }
+
+  public void setAddAccessControlAllowOrigin(boolean pAddAccessControlAllowOrigin) {
+    this.mAddAccessControlAllowOrigin = pAddAccessControlAllowOrigin;
+  }
+
+  public String getAccessControlAllowOrigin() {
+    return mAccessControlAllowOrigin;
+  }
+
+  public void setAccessControlAllowOrigin(String pAccessControlAllowOrigin) {
+    this.mAccessControlAllowOrigin = pAccessControlAllowOrigin;
+  }
+  
 }
