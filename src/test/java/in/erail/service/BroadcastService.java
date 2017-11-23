@@ -29,7 +29,10 @@ public class BroadcastService extends ServiceImpl{
     
     getLog().debug(() -> String.format("Message[%s] published on [%s]", body.toString(),topicName));
     
-    pMessage.reply(TestConstants.Service.Message.successMessage());
+    JsonObject resp = new JsonObject();
+    resp.put(FramworkConstants.RoutingContext.Json.BODY, TestConstants.Service.Message.successMessage());
+    
+    pMessage.reply(resp);
   }
   
 }

@@ -1,12 +1,9 @@
-package in.erail.service;
+package in.erail.route;
 
-import com.google.common.net.HttpHeaders;
 import in.erail.server.Server;
-import in.erail.test.TestConstants;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Timeout;
@@ -20,7 +17,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
  * @author vinay
  */
 @RunWith(VertxUnitRunner.class)
-public class BroadcastServiceTest {
+public class CrossOriginResourceSharingRouterTest {
 
   @Rule
   public Timeout rule = Timeout.seconds(2000);
@@ -28,35 +25,23 @@ public class BroadcastServiceTest {
   @Test
   public void testProcess(TestContext context) {
 
-    Async async = context.async(2);
+    Async async = context.async();
 
     Server server = Glue.instance().<Server>resolve("/in/erail/server/Server");
 
-    //API Reply
-    server.getVertx().eventBus().<JsonObject>consumer("testTopic", (event) -> {
-      String data = event.body().getString("data");
-      context.assertEquals("testdata", data);
-      async.countDown();
-    });
-
-    //Broadcast Request
-    String json = new JsonObject().put("data", "testdata").toString();
     server
             .getVertx()
             .createHttpClient()
-            .post(server.getPort(), server.getHost(), "/v1/broadcast/testTopic")
+            .options(server.getPort(), server.getHost(), "/v1/broadcast/testTopic")
             .putHeader("content-type", "application/json")
-            .putHeader("content-length", Integer.toString(json.length()))
-            .putHeader(HttpHeaders.AUTHORIZATION, TestConstants.ACCESS_TOKEN)
             .handler(response -> {
               context.assertEquals(response.statusCode(), 200, response.statusMessage());
+              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS.toString()),"X-POST");
+              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS.toString()),"POST");
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString()),"*");
-              response.bodyHandler((event) -> {
-                context.assertEquals(event.toString(), TestConstants.Service.Message.successMessage().toString());
-                async.countDown();
-              });
+              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_MAX_AGE.toString()),"3600");
+              async.complete();
             })
-            .write(json)
             .end();
 
   }

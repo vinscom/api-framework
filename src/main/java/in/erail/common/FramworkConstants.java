@@ -19,6 +19,7 @@ public class FramworkConstants {
       public static final String PARAM = "param";
       public static final String QUERY = "query";
       public static final String BODY = "body";
+      public static final String STATUS_CODE = "statusCode";
     }
 
   }
