@@ -1,5 +1,7 @@
 package in.erail.route;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.net.HttpHeaders;
 import in.erail.service.Service;
 import in.erail.common.FramworkConstants;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -25,6 +27,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
+  private String mAccessControlAllowOrigin = "*";
 
   public File getOpenAPI3File() {
     return mOpenAPI3File;
@@ -53,12 +56,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                       if (reply.succeeded()) {
                         pRequestContext
                                 .response()
+                                .putHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, getAccessControlAllowOrigin())
                                 .setStatusCode(200)
                                 .end(reply.result().body().toString());
                       } else {
                         getLog().error(() -> "Error in reply:" + reply.cause().toString());
                         pRequestContext
                                 .response()
+                                .putHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, getAccessControlAllowOrigin())
                                 .setStatusCode(400)
                                 .end(reply.cause().toString());
                       }
@@ -130,6 +135,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             });
 
     return apiFactory.getRouter();
+  }
+
+  public String getAccessControlAllowOrigin() {
+    return mAccessControlAllowOrigin;
+  }
+
+  public void setAccessControlAllowOrigin(String pAccessControlAllowOrigin) {
+    this.mAccessControlAllowOrigin = pAccessControlAllowOrigin;
   }
 
   public boolean isSecurityEnable() {
