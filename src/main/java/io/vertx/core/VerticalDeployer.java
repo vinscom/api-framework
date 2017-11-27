@@ -1,38 +1,81 @@
 package io.vertx.core;
 
-import io.vertx.reactivex.core.AbstractVerticle;
 import io.vertx.reactivex.core.Vertx;
 
 import java.util.Arrays;
-import in.erail.glue.Glue;
 import in.erail.glue.annotation.StartService;
+import in.erail.glue.component.ServiceArray;
+import io.vertx.core.json.JsonObject;
+import org.apache.logging.log4j.Logger;
 
 public class VerticalDeployer {
 
-  private String[] mVerticals;
+  private String[] mVerticalNames;
+  private ServiceArray mVerticalInstances;
   private DeploymentOptions mDeploymentOptions;
   private Vertx mVertx;
+  private Logger mLog;
+  private String mDeployStatusTopicName;
 
   @StartService
   public void start() {
 
+    //Deploy using name
     Arrays
-            .stream(getVerticals())
+            .stream(getVerticalNames())
             .forEach((path) -> {
-              AbstractVerticle av = Glue.instance().<AbstractVerticle>resolve(path);
-              getVertx().getDelegate().deployVerticle(av, getDeploymentOptions());
+              JsonObject deployMsg = new JsonObject();
+              deployMsg.put("name", path);
+              getVertx()
+                      .getDelegate()
+                      .deployVerticle(path, getDeploymentOptions(), (result) -> {
+                        if (result.succeeded()) {
+                          String deploymentId = result.result();
+                          deployMsg.put("deploymentId", deploymentId);
+                          deployMsg.put("success", true);
+                          getVertx().eventBus().publish(getDeployStatusTopicName(), deployMsg);
+                          getLog().info(() -> "Deployed:" + path + ":" + deploymentId);
+                        } else {
+                          deployMsg.put("success", false);
+                          getVertx().eventBus().publish(getDeployStatusTopicName(), deployMsg);
+                          getLog().error("Vertical Deployment failed", result.cause());
+                        }
+                      });
             });
+
+    //Deploy using Java class instance
+    getVerticalInstances()
+            .getServices()
+            .stream()
+            .forEach((vertical) -> {
+
+              JsonObject deployMsg = new JsonObject();
+              deployMsg.put("name", vertical.getClass().getCanonicalName());
+              getVertx()
+                      .getDelegate()
+                      .deployVerticle((Verticle) vertical, getDeploymentOptions(), (result) -> {
+                        if (result.succeeded()) {
+                          String deploymentId = result.result();
+                          deployMsg.put("deploymentId", deploymentId);
+                          deployMsg.put("success", true);
+                          getVertx().eventBus().publish(getDeployStatusTopicName(), deployMsg);
+                          getLog().info(() -> "Deployed:" + vertical.getClass().getCanonicalName() + ":" + deploymentId);
+                        } else {
+                          deployMsg.put("success", false);
+                          getVertx().eventBus().publish(getDeployStatusTopicName(), deployMsg);
+                          getLog().error("Vertical Deployment failed", result.cause());
+                        }
+                      });
+            });
+
   }
 
-  public String[] getVerticals() {
-    if (mVerticals == null) {
-      return new String[]{};
-    }
-    return mVerticals;
+  public String[] getVerticalNames() {
+    return mVerticalNames;
   }
 
-  public void setVerticals(String[] pVerticals) {
-    mVerticals = pVerticals;
+  public void setVerticalNames(String[] pVerticalNames) {
+    mVerticalNames = pVerticalNames;
   }
 
   public DeploymentOptions getDeploymentOptions() {
@@ -49,6 +92,30 @@ public class VerticalDeployer {
 
   public void setVertx(Vertx pVertx) {
     this.mVertx = pVertx;
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
+  }
+
+  public String getDeployStatusTopicName() {
+    return mDeployStatusTopicName;
+  }
+
+  public void setDeployStatusTopicName(String pDeployStatusTopicName) {
+    this.mDeployStatusTopicName = pDeployStatusTopicName;
+  }
+
+  public ServiceArray getVerticalInstances() {
+    return mVerticalInstances;
+  }
+
+  public void setVerticalInstances(ServiceArray pVerticalInstances) {
+    this.mVerticalInstances = pVerticalInstances;
   }
 
 }
