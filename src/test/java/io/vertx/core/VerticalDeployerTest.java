@@ -24,11 +24,15 @@ public class VerticalDeployerTest {
   @Test
   public void testJSDeployment(TestContext context) {
 
-    Async async = context.async(2);
+    Async async = context.async(4);
     io.vertx.reactivex.core.Vertx vertx = Glue.instance().<VertxInstance>resolve("/io/vertx/core/VertxInstance").getVertx();
 
     //Reply from vertical
     vertx.eventBus().<JsonObject>consumer("vertical.test.js", (event) -> {
+      async.countDown();
+    });
+    
+    vertx.eventBus().<JsonObject>consumer("vertical.test.java", (event) -> {
       async.countDown();
     });
 
