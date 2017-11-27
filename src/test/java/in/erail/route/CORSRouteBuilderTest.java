@@ -1,5 +1,6 @@
 package in.erail.route;
 
+import com.google.common.net.HttpHeaders;
 import in.erail.server.Server;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -17,7 +18,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
  * @author vinay
  */
 @RunWith(VertxUnitRunner.class)
-public class CrossOriginResourceSharingRouterTest {
+public class CORSRouteBuilderTest {
 
   @Rule
   public Timeout rule = Timeout.seconds(2000);
@@ -34,12 +35,13 @@ public class CrossOriginResourceSharingRouterTest {
             .createHttpClient()
             .options(server.getPort(), server.getHost(), "/v1/broadcast/testTopic")
             .putHeader("content-type", "application/json")
+            .putHeader(HttpHeaders.ORIGIN, "https://test.com")
+            .putHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
             .handler(response -> {
-              context.assertEquals(response.statusCode(), 200, response.statusMessage());
-              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS.toString()),"X-POST");
-              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS.toString()),"POST");
-              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString()),"*");
-              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_MAX_AGE.toString()),"3600");
+              context.assertEquals(response.statusCode(), 204, response.statusMessage());
+              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS.toString()), "GET,POST,OPTIONS");
+              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString()), "*");
+              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_MAX_AGE.toString()), "3600");
               async.complete();
             })
             .end();
