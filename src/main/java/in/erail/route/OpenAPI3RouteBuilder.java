@@ -29,9 +29,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
-  private boolean mAddAccessControlAllowOrigin;
-  private String mAccessControlAllowOrigin;
-
+  
   public File getOpenAPI3File() {
     return mOpenAPI3File;
   }
@@ -101,10 +99,6 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .forEach((field) -> {
               pContext.response().putHeader(field, headers.getString(field, ""));
             });
-
-    if(isAddAccessControlAllowOrigin()){
-      pContext.response().putHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString(), getAccessControlAllowOrigin());
-    }
     
     pContext.response().setStatusCode(HttpResponseStatus.parseLine(statusCode).code());
 
@@ -178,22 +172,6 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     } catch (IOException ex) {
       getLog().error(ex);
     }
-  }
-
-  public boolean isAddAccessControlAllowOrigin() {
-    return mAddAccessControlAllowOrigin;
-  }
-
-  public void setAddAccessControlAllowOrigin(boolean pAddAccessControlAllowOrigin) {
-    this.mAddAccessControlAllowOrigin = pAddAccessControlAllowOrigin;
-  }
-
-  public String getAccessControlAllowOrigin() {
-    return mAccessControlAllowOrigin;
-  }
-
-  public void setAccessControlAllowOrigin(String pAccessControlAllowOrigin) {
-    this.mAccessControlAllowOrigin = pAccessControlAllowOrigin;
   }
   
 }

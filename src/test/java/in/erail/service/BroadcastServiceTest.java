@@ -46,6 +46,7 @@ public class BroadcastServiceTest {
             .createHttpClient()
             .post(server.getPort(), server.getHost(), "/v1/broadcast/testTopic")
             .putHeader("content-type", "application/json")
+            .putHeader(HttpHeaders.ORIGIN, "https://test.com")
             .putHeader("content-length", Integer.toString(json.length()))
             .putHeader(HttpHeaders.AUTHORIZATION, TestConstants.ACCESS_TOKEN)
             .handler(response -> {

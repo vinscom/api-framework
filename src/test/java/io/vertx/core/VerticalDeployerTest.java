@@ -22,7 +22,7 @@ public class VerticalDeployerTest {
   public Timeout rule = Timeout.seconds(2000);
 
   @Test
-  public void testJSDeployment(TestContext context) {
+  public void testVerticalDeployment(TestContext context) {
 
     Async async = context.async(4);
     io.vertx.reactivex.core.Vertx vertx = Glue.instance().<VertxInstance>resolve("/io/vertx/core/VertxInstance").getVertx();
@@ -43,7 +43,7 @@ public class VerticalDeployerTest {
       async.countDown();
     });
 
-    VerticalDeployer deployer = Glue.instance().<VerticalDeployer>resolve("/io/vertx/core/VerticalDeployer");
+    Glue.instance().<VerticalDeployer>resolve("/io/vertx/core/VerticalDeployer");
 
   }
 
