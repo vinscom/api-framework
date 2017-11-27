@@ -26,3 +26,5 @@ hs_err_pid*
 nbactions.xml
 .settings
 /nbproject/
+.idea
+.vertx
