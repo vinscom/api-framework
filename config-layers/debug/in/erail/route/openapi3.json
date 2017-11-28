@@ -1,0 +1,23 @@
+{
+  "paths": {
+    "/debug/topic/all": {
+      "get": {
+        "summary": "Get all currently subscribed topic",
+        "description": "Return list of topic name and count of subscriber",
+        "operationId": "API_V1_TOPIC_REPORT_SERVICE",
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

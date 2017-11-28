@@ -11,6 +11,7 @@ import in.erail.service.Service;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.MultiMap;
 import io.vertx.reactivex.core.http.HttpServerResponse;
@@ -29,7 +30,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
-  
+
   public File getOpenAPI3File() {
     return mOpenAPI3File;
   }
@@ -71,7 +72,12 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   public JsonObject serialiseRoutingContext(RoutingContext pContext) {
 
     JsonObject result = new JsonObject();
-    result.put(FramworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+
+    if (pContext.request().method() == HttpMethod.POST) {
+      result.put(FramworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+    } else {
+      result.put(FramworkConstants.RoutingContext.Json.BODY, new JsonObject());
+    }
 
     JsonObject headers = new JsonObject(convertMultiMapIntoMap(pContext.request().headers()));
     result.put(FramworkConstants.RoutingContext.Json.HEADER, headers);
@@ -89,7 +95,6 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   public HttpServerResponse buildResponseFromReply(JsonObject pReplyResponse, RoutingContext pContext) {
 
-    JsonObject body = pReplyResponse.getJsonObject(FramworkConstants.RoutingContext.Json.BODY, new JsonObject());
     JsonObject headers = pReplyResponse.getJsonObject(FramworkConstants.RoutingContext.Json.HEADER, new JsonObject());
     String statusCode = pReplyResponse.getString(FramworkConstants.RoutingContext.Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
 
@@ -99,12 +104,16 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .forEach((field) -> {
               pContext.response().putHeader(field, headers.getString(field, ""));
             });
-    
+
     pContext.response().setStatusCode(HttpResponseStatus.parseLine(statusCode).code());
 
-    String bodyStr = body.toString();
-    pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(bodyStr.length()));
-    pContext.response().write(body.toString());
+    Object body = pReplyResponse.getMap().get(FramworkConstants.RoutingContext.Json.BODY);
+
+    if (body != null) {
+      String bodyStr = body.toString();
+      pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(bodyStr.length()));
+      pContext.response().write(bodyStr);
+    }
 
     return pContext.response();
   }
@@ -173,5 +182,5 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
       getLog().error(ex);
     }
   }
-  
+
 }

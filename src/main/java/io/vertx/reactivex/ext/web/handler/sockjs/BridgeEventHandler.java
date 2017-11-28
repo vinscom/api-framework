@@ -5,6 +5,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
 import java.util.List;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -12,11 +13,12 @@ import java.util.List;
  */
 public class BridgeEventHandler implements Handler<BridgeEvent> {
 
-  private static final String CLUSTER_SUB_COUNTER = "in.erail.subscriber.counter";
-  private static final String CLUSTER_SUB_MAP = "in.erail.subscribers.map";
+  private static final String CLUSTER_SUB_MAP = "in.erail.sub";
   private List<String> mAddressAllowedToRegister;
   private List<String> mAddressAllowedToRegisterRegex;
   private boolean mSubscriberReportEnable = false;
+  private String mClusterSubscriberMapKey = CLUSTER_SUB_MAP;
+  private Logger mLog;
   private Vertx mVertx;
 
   @Override
@@ -72,14 +74,18 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
     } else {
 
       if (isSubscriberReportEnable()) {
+
+        String clusterMap = getClusterSubscriberMapKey();
+        String clusterCounter = clusterMap + pAddress;
+        
         getVertx()
                 .sharedData()
-                .rxGetClusterWideMap(CLUSTER_SUB_MAP)
+                .rxGetClusterWideMap(clusterMap)
                 .flatMap((map) -> {
-                  return map.rxPutIfAbsent(pAddress, true);
+                  return map.rxPut(pAddress, true).toSingleDefault(pAddress);
                 })
-                .flatMap((key) -> {
-                  return getVertx().sharedData().rxGetCounter(CLUSTER_SUB_COUNTER);
+                .flatMap((mapKey) -> {
+                  return getVertx().sharedData().rxGetCounter(clusterCounter);
                 })
                 .flatMap((counter) -> {
                   return counter.rxIncrementAndGet();
@@ -152,7 +158,7 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
     if (isSubscriberReportEnable()) {
       getVertx()
               .sharedData()
-              .rxGetCounter(CLUSTER_SUB_COUNTER)
+              .rxGetCounter(getClusterSubscriberMapKey() + pAddress)
               .flatMap((counter) -> {
                 return counter.rxDecrementAndGet();
               })
@@ -160,10 +166,10 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
                 if (count == 0l) {
                   getVertx()
                           .sharedData()
-                          .rxGetClusterWideMap(CLUSTER_SUB_MAP)
-                          .subscribe((map) -> {
-                            map.rxRemove(pAddress);
-                          });
+                          .rxGetClusterWideMap(getClusterSubscriberMapKey())
+                          .flatMap((map) -> {
+                            return map.rxRemove(pAddress);
+                          }).subscribe();
                 }
               })
               .subscribe();
@@ -186,6 +192,22 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
 
   public void setSubscriberReportEnable(boolean pSubscriberReportEnable) {
     this.mSubscriberReportEnable = pSubscriberReportEnable;
+  }
+
+  public String getClusterSubscriberMapKey() {
+    return mClusterSubscriberMapKey;
+  }
+
+  public void setClusterSubscriberMapKey(String pClusterSubscriberMapKey) {
+    this.mClusterSubscriberMapKey = pClusterSubscriberMapKey;
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }
