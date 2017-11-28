@@ -162,16 +162,6 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
               .flatMap((counter) -> {
                 return counter.rxDecrementAndGet();
               })
-              .doOnSuccess((count) -> {
-                if (count == 0l) {
-                  getVertx()
-                          .sharedData()
-                          .rxGetClusterWideMap(getClusterSubscriberMapKey())
-                          .flatMap((map) -> {
-                            return map.rxRemove(pAddress);
-                          }).subscribe();
-                }
-              })
               .subscribe();
     }
 
