@@ -3,6 +3,7 @@ package io.vertx.reactivex.ext.web.handler.sockjs;
 import in.erail.common.FramworkConstants;
 import io.vertx.core.Handler;
 import io.vertx.core.json.JsonObject;
+import io.vertx.reactivex.core.Vertx;
 import java.util.List;
 
 /**
@@ -11,8 +12,12 @@ import java.util.List;
  */
 public class BridgeEventHandler implements Handler<BridgeEvent> {
 
+  private static final String CLUSTER_SUB_COUNTER = "in.erail.subscriber.counter";
+  private static final String CLUSTER_SUB_MAP = "in.erail.subscribers.map";
   private List<String> mAddressAllowedToRegister;
   private List<String> mAddressAllowedToRegisterRegex;
+  private boolean mSubscriberReportEnable = false;
+  private Vertx mVertx;
 
   @Override
   public void handle(BridgeEvent pEvent) {
@@ -65,6 +70,23 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
     if (!(matchAddress(pAddress) || matchAddressRegex(pAddress))) {
       pEvent.fail("Can't subscribe to topic : " + pAddress);
     } else {
+
+      if (isSubscriberReportEnable()) {
+        getVertx()
+                .sharedData()
+                .rxGetClusterWideMap(CLUSTER_SUB_MAP)
+                .flatMap((map) -> {
+                  return map.rxPutIfAbsent(pAddress, true);
+                })
+                .flatMap((key) -> {
+                  return getVertx().sharedData().rxGetCounter(CLUSTER_SUB_COUNTER);
+                })
+                .flatMap((counter) -> {
+                  return counter.rxIncrementAndGet();
+                })
+                .subscribe();
+      }
+
       pEvent.complete(true);
     }
   }
@@ -126,7 +148,44 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
   }
 
   public void handleUnregister(String pAddress, BridgeEvent pEvent) {
+
+    if (isSubscriberReportEnable()) {
+      getVertx()
+              .sharedData()
+              .rxGetCounter(CLUSTER_SUB_COUNTER)
+              .flatMap((counter) -> {
+                return counter.rxDecrementAndGet();
+              })
+              .doOnSuccess((count) -> {
+                if (count == 0l) {
+                  getVertx()
+                          .sharedData()
+                          .rxGetClusterWideMap(CLUSTER_SUB_MAP)
+                          .subscribe((map) -> {
+                            map.rxRemove(pAddress);
+                          });
+                }
+              })
+              .subscribe();
+    }
+
     pEvent.complete(true);
+  }
+
+  public Vertx getVertx() {
+    return mVertx;
+  }
+
+  public void setVertx(Vertx pVertx) {
+    this.mVertx = pVertx;
+  }
+
+  public boolean isSubscriberReportEnable() {
+    return mSubscriberReportEnable;
+  }
+
+  public void setSubscriberReportEnable(boolean pSubscriberReportEnable) {
+    this.mSubscriberReportEnable = pSubscriberReportEnable;
   }
 
 }
