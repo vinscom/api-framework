@@ -91,23 +91,33 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <argLine>-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory -Dglue.layers=${project.basedir}/config-layers/common,${project.basedir}/config-layers/test</argLine>
+        <argLine>-Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory -Dglue.layers=${project.basedir}/config-layers/common,${project.basedir}/config-layers/debug,${project.basedir}/config-layers/test</argLine>
     </properties>
     <build>
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.5.3</version>
-                <configuration>
-                    <descriptor>src/assembly/dep.xml</descriptor>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>create-archive</id>
+                        <id>commong-config</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
+                        <configuration>
+                            <descriptor>src/assembly/common-config.xml</descriptor>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>debug-config</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <descriptor>src/assembly/debug-config.xml</descriptor>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
