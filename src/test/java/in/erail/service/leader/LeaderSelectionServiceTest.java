@@ -28,29 +28,33 @@ public class LeaderSelectionServiceTest {
   @Test
   public void testRegister(TestContext context) {
 
-    Async async = context.async(2);
+    Async async = context.async(3);
 
     LeaderSelectionService service = Glue.instance().<LeaderSelectionService>resolve("/in/erail/service/leader/LeaderSelectionService");
-    Session session = service.getSessionStore().createSession(1000000);
-    service.getSessionStore().rxPut(session).blockingGet();
+
+    String session = "FAKE_SESSION";
 
     JsonObject regsiterMsg = new JsonObject();
     regsiterMsg.put("type", BridgeEventType.REGISTER.toString());
     regsiterMsg.put("address", "ninja");
-    regsiterMsg.put("session", session.id());
+    regsiterMsg.put("session", session);
 
     JsonObject unregsiterMsg = new JsonObject();
     unregsiterMsg.put("type", BridgeEventType.UNREGISTER.toString());
     unregsiterMsg.put("address", "ninja");
-    unregsiterMsg.put("session", session.id());
+    unregsiterMsg.put("session", session);
 
     EventBus eb = service.getVertx().eventBus();
 
     eb
             .<JsonObject>consumer("ninja", (event) -> {
               String leaderId = event.body().getString("leader");
-              eb.send(leaderId, new JsonObject());
-              service.getVertx().setTimer(2000, (t) -> {
+              eb.send(leaderId, new JsonObject(), (e) -> {
+                if (e.succeeded()) {
+                  async.countDown();
+                }
+              });
+              service.getVertx().setTimer(100, (t) -> {
                 service
                         .getVertx()
                         .sharedData()
@@ -59,9 +63,8 @@ public class LeaderSelectionServiceTest {
                             context.assertEquals(leaderId.split("#")[0], v.result());
                             async.countDown();
                             service.getVertx().eventBus().send(service.getBridgeEventUpdateTopicName(), unregsiterMsg);
-                            service.getVertx().setTimer(2000, (p) -> {
+                            service.getVertx().setTimer(100, (p) -> {
                               m.result().get("ninja", (v2) -> {
-                                Session session3 = service.getSessionStore().rxGet(session.id()).subscribeOn(Schedulers.computation()).blockingGet();
                                 context.assertNull(v2.result());
                                 async.countDown();
                               });
