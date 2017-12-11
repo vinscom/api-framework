@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import in.erail.glue.annotation.StartService;
 import io.reactivex.Single;
 import io.reactivex.flowables.ConnectableFlowable;
-import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.BridgeEventType;
