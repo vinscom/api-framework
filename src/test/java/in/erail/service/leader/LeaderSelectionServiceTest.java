@@ -10,10 +10,8 @@ import io.vertx.ext.unit.junit.Timeout;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Rule;
 import in.erail.glue.Glue;
-import io.reactivex.schedulers.Schedulers;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.core.eventbus.EventBus;
-import io.vertx.reactivex.ext.web.Session;
 
 /**
  *
@@ -36,18 +34,18 @@ public class LeaderSelectionServiceTest {
 
     JsonObject regsiterMsg = new JsonObject();
     regsiterMsg.put("type", BridgeEventType.REGISTER.toString());
-    regsiterMsg.put("address", "ninja");
+    regsiterMsg.put("address", "ninja-live");
     regsiterMsg.put("session", session);
 
     JsonObject unregsiterMsg = new JsonObject();
     unregsiterMsg.put("type", BridgeEventType.UNREGISTER.toString());
-    unregsiterMsg.put("address", "ninja");
+    unregsiterMsg.put("address", "ninja-live");
     unregsiterMsg.put("session", session);
 
     EventBus eb = service.getVertx().eventBus();
 
     eb
-            .<JsonObject>consumer("ninja", (event) -> {
+            .<JsonObject>consumer("ninja-live", (event) -> {
               String leaderId = event.body().getString("leader");
               eb.send(leaderId, new JsonObject(), (e) -> {
                 if (e.succeeded()) {
@@ -59,12 +57,12 @@ public class LeaderSelectionServiceTest {
                         .getVertx()
                         .sharedData()
                         .<String, String>getClusterWideMap(service.getLeaderMapName(), (m) -> {
-                          m.result().get("ninja", (v) -> {
+                          m.result().get("ninja-live", (v) -> {
                             context.assertEquals(leaderId.split("#")[0], v.result());
                             async.countDown();
                             service.getVertx().eventBus().send(service.getBridgeEventUpdateTopicName(), unregsiterMsg);
                             service.getVertx().setTimer(100, (p) -> {
-                              m.result().get("ninja", (v2) -> {
+                              m.result().get("ninja-live", (v2) -> {
                                 context.assertNull(v2.result());
                                 async.countDown();
                               });

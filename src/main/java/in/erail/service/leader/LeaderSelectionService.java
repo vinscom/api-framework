@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import org.apache.logging.log4j.Logger;
 
 /**
@@ -34,6 +35,8 @@ public class LeaderSelectionService {
   private long mNumberOfTryToSelectLeader = 3;
   private String mLeaderMessageLeaderFieldName = "leader";
   private long mLeaderConfirmationTimeout = 5000;
+  private Pattern mAllowedAddressForLeaderRegex;
+  private long mClusterMapKeyTimout = 8 * 60 * 1000;
 
   @StartService
   public void start() {
@@ -59,6 +62,7 @@ public class LeaderSelectionService {
               .toFlowable()
               .map(this::parse)
               .filter((e) -> e != null)
+              .filter((e) -> getAllowedAddressForLeaderRegex().matcher(e.getAddress()).find())
               .publish();
 
       events
@@ -76,7 +80,7 @@ public class LeaderSelectionService {
 
   protected void topicRegister(BridgeEventUpdate pEvent) {
 
-    String debugKey = pEvent.getSession() + ":" + pEvent.getAddress();
+    String debugKey = pEvent.getSession() + ":" + pEvent.getAddress() + ":" + pEvent.getType().toString();
 
     getLog().debug(() -> String.format("[%s] Processing %s", debugKey, pEvent.toString()));
 
@@ -93,8 +97,9 @@ public class LeaderSelectionService {
                         if (!Strings.isNullOrEmpty(v)) {
                           getLog().debug(() -> String.format("[%s] Leader:[%s] found for [%s]", debugKey, v, lc.getAddress()));
                           lc.setError(true);
+                        } else {
+                          getLog().debug(() -> String.format("[%s] No leader set for [%s]", debugKey, lc.getAddress()));
                         }
-                        getLog().debug(() -> String.format("[%s] No leader set for [%s]", debugKey, lc.getAddress()));
                         return lc;
                       });
             })
@@ -176,7 +181,7 @@ public class LeaderSelectionService {
               getLog().debug(() -> String.format("[%s] Updated Cluster Map Key:[%s],Value:[%s]", debugKey, lc.getAddress(), lc.getLeaderId()));
               return getTopicLeaderMap()
                       .get()
-                      .rxPut(lc.getAddress(), lc.getLeaderId());
+                      .rxPut(lc.getAddress(), lc.getLeaderId(), getClusterMapKeyTimout());
             })
             .doFinally(() -> {
               if (lctx.getLock() != null) {
@@ -195,12 +200,7 @@ public class LeaderSelectionService {
 
   protected void topicUnregister(BridgeEventUpdate pEvent) {
 
-    if (Strings.isNullOrEmpty(pEvent.getSession())) {
-      getLog().error(() -> "Session missing");
-      return;
-    }
-
-    String debugKey = pEvent.getSession() + ":" + pEvent.getAddress();
+    String debugKey = pEvent.getSession() + ":" + pEvent.getAddress() + ":" + pEvent.getType().toString();
 
     getLog().debug(() -> String.format("[%s] Processing %s", debugKey, pEvent.toString()));
 
@@ -218,8 +218,9 @@ public class LeaderSelectionService {
                         if (!lc.getLeaderId().equals(v)) {
                           getLog().debug(() -> String.format("[%s] [%s] is not a leader. Stop Processing", debugKey, lc.getLeaderId()));
                           lc.setError(true);
+                        } else {
+                          getLog().debug(() -> String.format("[%s] [%s] is a leader", debugKey, lc.getLeaderId()));
                         }
-                        getLog().debug(() -> String.format("[%s] [%s] is a leader", debugKey, lc.getLeaderId()));
                         return lc;
                       });
             })
@@ -364,6 +365,22 @@ public class LeaderSelectionService {
 
   public void setLeaderConfirmationTimeout(long pLeaderConfirmationTimeout) {
     this.mLeaderConfirmationTimeout = pLeaderConfirmationTimeout;
+  }
+
+  public Pattern getAllowedAddressForLeaderRegex() {
+    return mAllowedAddressForLeaderRegex;
+  }
+
+  public void setAllowedAddressForLeaderRegex(Pattern pAllowedAddressForLeaderRegex) {
+    this.mAllowedAddressForLeaderRegex = pAllowedAddressForLeaderRegex;
+  }
+
+  public long getClusterMapKeyTimout() {
+    return mClusterMapKeyTimout;
+  }
+
+  public void setClusterMapKeyTimout(long pClusterMapKeyTimout) {
+    this.mClusterMapKeyTimout = pClusterMapKeyTimout;
   }
 
 }
