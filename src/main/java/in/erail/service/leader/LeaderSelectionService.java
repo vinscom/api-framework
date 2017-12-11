@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import in.erail.glue.annotation.StartService;
 import io.reactivex.Single;
 import io.reactivex.flowables.ConnectableFlowable;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.BridgeEventType;
@@ -270,6 +271,8 @@ public class LeaderSelectionService {
               beu.setSession(UUID.randomUUID().toString());
               getVertx().eventBus().send(getBridgeEventUpdateTopicName(), beu.toJson());
             })
+            .toCompletable()
+            .onErrorComplete()
             .doFinally(() -> {
               if (lctx.getLock() != null) {
                 lctx.getLock().release();
@@ -278,7 +281,7 @@ public class LeaderSelectionService {
                 getLog().debug(() -> String.format("[%s] No lock aquired, so, nothing to release", debugKey));
               }
             })
-            .subscribe((t) -> {
+            .subscribe(() -> {
               getLog().debug(() -> String.format("[%s] Finished Processing [%s]", debugKey, pEvent.toString()));
             });
 
