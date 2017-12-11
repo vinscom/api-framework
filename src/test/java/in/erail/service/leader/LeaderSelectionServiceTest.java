@@ -10,6 +10,7 @@ import io.vertx.ext.unit.junit.Timeout;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Rule;
 import in.erail.glue.Glue;
+import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.core.eventbus.EventBus;
 
@@ -40,14 +41,18 @@ public class LeaderSelectionServiceTest {
     JsonObject unregsiterMsg = new JsonObject();
     unregsiterMsg.put("type", BridgeEventType.UNREGISTER.toString());
     unregsiterMsg.put("address", "ninja-live");
-    unregsiterMsg.put("session", session);
+    unregsiterMsg.put("session", "FAKE_LEADER_SOCKET");
 
     EventBus eb = service.getVertx().eventBus();
 
     eb
             .<JsonObject>consumer("ninja-live", (event) -> {
               String leaderId = event.body().getString("leader");
-              eb.send(leaderId, new JsonObject(), (e) -> {
+
+              DeliveryOptions delOpt = new DeliveryOptions();
+              delOpt.addHeader("session", "FAKE_LEADER_SOCKET");
+
+              eb.send(leaderId, new JsonObject(), delOpt, (e) -> {
                 if (e.succeeded()) {
                   async.countDown();
                 }
@@ -58,7 +63,7 @@ public class LeaderSelectionServiceTest {
                         .sharedData()
                         .<String, String>getClusterWideMap(service.getLeaderMapName(), (m) -> {
                           m.result().get("ninja-live", (v) -> {
-                            context.assertEquals(leaderId.split("#")[0], v.result());
+                            context.assertEquals("FAKE_LEADER_SOCKET", v.result());
                             async.countDown();
                             service.getVertx().eventBus().send(service.getBridgeEventUpdateTopicName(), unregsiterMsg);
                             service.getVertx().setTimer(100, (p) -> {

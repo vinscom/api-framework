@@ -33,10 +33,11 @@ public class LeaderSelectionService {
   private boolean mEnable = false;
   private long mLockAquireTimeout = 1000;
   private long mNumberOfTryToSelectLeader = 3;
-  private String mLeaderMessageLeaderFieldName = "leader";
+  private String mConfirmationMessageTopicFieldName = "leader";
   private long mLeaderConfirmationTimeout = 5000;
   private Pattern mAllowedAddressForLeaderRegex;
   private long mClusterMapKeyTimout = 8 * 60 * 1000;
+  private String mSendMessageHeaderSessionFieldName = "session";
 
   @StartService
   public void start() {
@@ -143,23 +144,24 @@ public class LeaderSelectionService {
                           e.onSuccess(pEvent.getSession() + "#" + UUID.randomUUID().toString());
                         }
                       })
-                      .flatMap((leaderId) -> {
-                        getLog().debug(() -> String.format("[%s] Sending confirmation message on [%s], expecting reply on [%s]", debugKey, lc.getAddress(), leaderId));
+                      .flatMap((confirmationTopic) -> {
+                        getLog().debug(() -> String.format("[%s] Sending confirmation message on [%s], expecting reply on [%s]", debugKey, lc.getAddress(), confirmationTopic));
                         /**
                          * {
                          * "leader" : "Leader ID" }
                          */
-                        JsonObject leaderMsg = new JsonObject().put(getLeaderMessageLeaderFieldName(), leaderId);
-                        getVertx().eventBus().send(lc.getAddress(), leaderMsg);
+                        JsonObject confirmationMsg = new JsonObject().put(getConfirmationMessageTopicFieldName(), confirmationTopic);
+                        getVertx().eventBus().send(lc.getAddress(), confirmationMsg);
                         return getVertx()
                                 .eventBus()
-                                .<JsonObject>consumer(leaderId)
+                                .<JsonObject>consumer(confirmationTopic)
                                 .toObservable()
                                 .firstOrError()
                                 .timeout(getLeaderConfirmationTimeout(), TimeUnit.MILLISECONDS)
                                 .doOnSuccess((msg) -> {
+                                  String leaderId = msg.headers().get(getSendMessageHeaderSessionFieldName());
                                   getLog().debug(() -> String.format("[%s] Got confirmation for [%s] on [%s]", debugKey, lc.getAddress(), leaderId));
-                                  lc.setLeaderId(leaderId.split("#")[0]); //Removing Salt
+                                  lc.setLeaderId(leaderId); //Socket id of socket connected to leader
                                   msg.reply(new JsonObject());  //Send confirmation to client. Only after this confirmation, client becomes leader
                                 });
                       })
@@ -351,12 +353,12 @@ public class LeaderSelectionService {
     this.mNumberOfTryToSelectLeader = pNumberOfTryToSelectLeader;
   }
 
-  public String getLeaderMessageLeaderFieldName() {
-    return mLeaderMessageLeaderFieldName;
+  public String getConfirmationMessageTopicFieldName() {
+    return mConfirmationMessageTopicFieldName;
   }
 
-  public void setLeaderMessageLeaderFieldName(String pLeaderMessageLeaderFieldName) {
-    this.mLeaderMessageLeaderFieldName = pLeaderMessageLeaderFieldName;
+  public void setConfirmationMessageTopicFieldName(String pConfirmationMessageTopicFieldName) {
+    this.mConfirmationMessageTopicFieldName = pConfirmationMessageTopicFieldName;
   }
 
   public long getLeaderConfirmationTimeout() {
@@ -381,6 +383,14 @@ public class LeaderSelectionService {
 
   public void setClusterMapKeyTimout(long pClusterMapKeyTimout) {
     this.mClusterMapKeyTimout = pClusterMapKeyTimout;
+  }
+
+  public String getSendMessageHeaderSessionFieldName() {
+    return mSendMessageHeaderSessionFieldName;
+  }
+
+  public void setSendMessageHeaderSessionFieldName(String pSendMessageHeaderSessionFieldName) {
+    this.mSendMessageHeaderSessionFieldName = pSendMessageHeaderSessionFieldName;
   }
 
 }
