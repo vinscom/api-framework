@@ -10,6 +10,7 @@ import io.vertx.ext.unit.junit.Timeout;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Rule;
 import in.erail.glue.Glue;
+import io.reactivex.disposables.Disposable;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.core.eventbus.EventBus;
@@ -46,35 +47,45 @@ public class LeaderSelectionServiceTest {
     EventBus eb = service.getVertx().eventBus();
 
     eb
-            .<JsonObject>consumer("ninja-live", (event) -> {
-              String leaderId = event.body().getString("leader");
+            .<JsonObject>consumer("ninja-live")
+            .toObservable()
+            .firstOrError()
+            .subscribe((msg) -> {
+              String leaderId = msg.body().getString("leader");
 
               DeliveryOptions delOpt = new DeliveryOptions();
               delOpt.addHeader("session", "FAKE_LEADER_SOCKET");
 
-              eb.send(leaderId, new JsonObject(), delOpt, (e) -> {
-                if (e.succeeded()) {
-                  async.countDown();
-                }
-              });
-              service.getVertx().setTimer(100, (t) -> {
-                service
-                        .getVertx()
-                        .sharedData()
-                        .<String, String>getClusterWideMap(service.getLeaderMapName(), (m) -> {
-                          m.result().get("ninja-live", (v) -> {
-                            context.assertEquals("FAKE_LEADER_SOCKET", v.result());
-                            async.countDown();
-                            service.getVertx().eventBus().send(service.getBridgeEventUpdateTopicName(), unregsiterMsg);
-                            service.getVertx().setTimer(100, (p) -> {
-                              m.result().get("ninja-live", (v2) -> {
-                                context.assertNull(v2.result());
-                                async.countDown();
-                              });
-                            });
-                          });
-                        });
-              });
+              eb
+                      .rxSend(leaderId, new JsonObject(), delOpt)
+                      .subscribe((reply) -> {
+                        async.countDown();
+                        service
+                                .getVertx()
+                                .sharedData()
+                                .<String, String>rxGetClusterWideMap(service.getLeaderMapName())
+                                .subscribe((m) -> {
+                                  service.getVertx().setTimer(100, (p) -> {
+                                    m
+                                            .rxGet("ninja-live")
+                                            .subscribe((v) -> {
+                                              context.assertEquals("FAKE_LEADER_SOCKET", v);
+                                              async.countDown();
+                                              service
+                                                      .getVertx()
+                                                      .eventBus()
+                                                      .send(service.getBridgeEventUpdateTopicName(), unregsiterMsg);
+
+                                              service.getVertx().setTimer(100, (p2) -> {
+                                                m.rxGet("ninja-live").subscribe((v2) -> {
+                                                  context.assertNull(v2);
+                                                  async.countDown();
+                                                });
+                                              });
+                                            });
+                                  });
+                                });
+                      });
             });
 
     service.getVertx().eventBus().send(service.getBridgeEventUpdateTopicName(), regsiterMsg);

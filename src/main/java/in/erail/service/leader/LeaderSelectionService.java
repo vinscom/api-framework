@@ -141,7 +141,7 @@ public class LeaderSelectionService {
                           /**
                            * On each try, we want to listen on new topic. This to avoid getting confirmation from old leader Leader ID = Session + # + Salt
                            */
-                          e.onSuccess(pEvent.getSession() + "#" + UUID.randomUUID().toString());
+                          e.onSuccess(UUID.randomUUID().toString());
                         }
                       })
                       .flatMap((confirmationTopic) -> {
@@ -159,9 +159,9 @@ public class LeaderSelectionService {
                                 .firstOrError()
                                 .timeout(getLeaderConfirmationTimeout(), TimeUnit.MILLISECONDS)
                                 .doOnSuccess((msg) -> {
-                                  String leaderId = msg.headers().get(getSendMessageHeaderSessionFieldName());
-                                  getLog().debug(() -> String.format("[%s] Got confirmation for [%s] on [%s]", debugKey, lc.getAddress(), leaderId));
-                                  lc.setLeaderId(leaderId); //Socket id of socket connected to leader
+                                  String leaderSession = msg.headers().get(getSendMessageHeaderSessionFieldName());
+                                  getLog().debug(() -> String.format("[%s] Got confirmation for [%s] on [%s]", debugKey, lc.getAddress(), leaderSession));
+                                  lc.setLeaderId(leaderSession); //Socket id of socket connected to leader
                                   msg.reply(new JsonObject());  //Send confirmation to client. Only after this confirmation, client becomes leader
                                 });
                       })
@@ -259,9 +259,17 @@ public class LeaderSelectionService {
               getLog().debug(() -> String.format("[%s] Removed ", debugKey, lc.getAddress()));
               return getTopicLeaderMap()
                       .get()
-                      .rxRemove(lc.getAddress());
+                      .rxRemove(lc.getAddress())
+                      .map((v) -> lc);
             })
-            .onErrorReturnItem("") //TODO: How to remove this line
+            .doOnSuccess((lc) -> {
+              //Trigger selection of new leader
+              BridgeEventUpdate beu = new BridgeEventUpdate();
+              beu.setAddress(lc.getAddress());
+              beu.setType(BridgeEventType.REGISTER);
+              beu.setSession(UUID.randomUUID().toString());
+              getVertx().eventBus().send(getBridgeEventUpdateTopicName(), beu.toJson());
+            })
             .doFinally(() -> {
               if (lctx.getLock() != null) {
                 lctx.getLock().release();
