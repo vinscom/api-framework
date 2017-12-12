@@ -1,13 +1,11 @@
 package in.erail.security;
 
 import in.erail.glue.Glue;
-import in.erail.service.leader.LeaderSelectionService;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Timeout;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 
