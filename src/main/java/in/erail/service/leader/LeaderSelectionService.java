@@ -160,7 +160,12 @@ public class LeaderSelectionService {
                                 .timeout(getLeaderConfirmationTimeout(), TimeUnit.MILLISECONDS)
                                 .doOnSuccess((msg) -> {
                                   String leaderSession = msg.headers().get(getSendMessageHeaderSessionFieldName());
-                                  getLog().debug(() -> String.format("[%s] Got confirmation for [%s] on [%s]", debugKey, lc.getAddress(), leaderSession));
+                                  if (Strings.isNullOrEmpty(leaderSession)) {
+                                    lc.setError(true);
+                                    getLog().debug(() -> String.format("[%s] Abort: Got null session id for [%s] on [%s]", debugKey, lc.getAddress(), leaderSession));
+                                  } else {
+                                    getLog().debug(() -> String.format("[%s] Got confirmation for [%s] on [%s]", debugKey, lc.getAddress(), leaderSession));
+                                  }
                                   lc.setLeaderId(leaderSession); //Socket id of socket connected to leader
                                   msg.reply(new JsonObject());  //Send confirmation to client. Only after this confirmation, client becomes leader
                                 });
