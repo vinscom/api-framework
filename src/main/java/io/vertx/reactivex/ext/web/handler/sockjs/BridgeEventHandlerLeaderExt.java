@@ -11,6 +11,7 @@ public class BridgeEventHandlerLeaderExt extends BridgeEventHandler {
 
   private String mBridgeEventUpdateTopicName;
   private String mSendMessageHeaderSessionFieldName;
+  private String mSendMessageHeaderConfirmMsgFieldName;
 
   @Override
   public void handleRegister(String pAddress, BridgeEvent pEvent) {
@@ -37,8 +38,11 @@ public class BridgeEventHandlerLeaderExt extends BridgeEventHandler {
     if (pEvent.isComplete()) {
       JsonObject rawMsg = pEvent.getRawMessage();
       JsonObject headers = rawMsg.getJsonObject("headers");
-      headers.put(getSendMessageHeaderSessionFieldName(), pEvent.socket().writeHandlerID());
-      pEvent.setRawMessage(rawMsg);
+      if (headers.containsKey(getSendMessageHeaderConfirmMsgFieldName())) {
+        //Only add session on confirmation messages
+        headers.put(getSendMessageHeaderSessionFieldName(), pEvent.socket().writeHandlerID());
+        pEvent.setRawMessage(rawMsg);
+      }
     }
   }
 
@@ -64,6 +68,14 @@ public class BridgeEventHandlerLeaderExt extends BridgeEventHandler {
 
   public void setSendMessageHeaderSessionFieldName(String pSendMessageHeaderSessionFieldName) {
     this.mSendMessageHeaderSessionFieldName = pSendMessageHeaderSessionFieldName;
+  }
+
+  public String getSendMessageHeaderConfirmMsgFieldName() {
+    return mSendMessageHeaderConfirmMsgFieldName;
+  }
+
+  public void setSendMessageHeaderConfirmMsgFieldName(String pSendMessageHeaderConfirmMsgFieldName) {
+    this.mSendMessageHeaderConfirmMsgFieldName = pSendMessageHeaderConfirmMsgFieldName;
   }
 
 }

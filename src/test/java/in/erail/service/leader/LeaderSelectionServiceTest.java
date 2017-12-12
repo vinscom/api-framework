@@ -10,7 +10,6 @@ import io.vertx.ext.unit.junit.Timeout;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Rule;
 import in.erail.glue.Glue;
-import io.reactivex.disposables.Disposable;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.core.eventbus.EventBus;
@@ -51,8 +50,8 @@ public class LeaderSelectionServiceTest {
             .toObservable()
             .firstOrError()
             .subscribe((msg) -> {
-              String leaderId = msg.body().getString("leader");
-
+              String leaderId = msg.body().getString("leader");              
+              //This will be done by BridgeEventHandler
               DeliveryOptions delOpt = new DeliveryOptions();
               delOpt.addHeader("session", "FAKE_LEADER_SOCKET");
 
