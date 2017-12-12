@@ -20,7 +20,17 @@ import java.util.regex.Pattern;
 import org.apache.logging.log4j.Logger;
 
 /**
- *
+ * <ul>
+ * <li>
+ * If there are N number of subscribers for Topic A. Then only
+ * one subscriber(Leader) out of N subscriber should be able to use send 
+ * message feature to send message to N subscriber of Topic A. 
+ * </li>
+ * <li>
+ * One subscriber can hold leadership for limited time only. After that
+ * leadership must be transfered to another subscriber.
+ * </li>
+ * </ul>
  * @author vinay
  */
 public class LeaderSelectionService {
