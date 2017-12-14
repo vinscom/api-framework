@@ -58,7 +58,7 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
   }
 
   protected void process(ServiceArray pProcessors, BridgeEvent pEvent) {
-    if (pProcessors.getServices().isEmpty()) {
+    if (pProcessors.getServices() == null || pProcessors.getServices().isEmpty()) {
       return;
     }
 
