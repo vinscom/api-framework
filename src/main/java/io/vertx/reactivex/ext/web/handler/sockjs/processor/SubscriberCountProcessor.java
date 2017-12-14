@@ -15,6 +15,7 @@ public class SubscriberCountProcessor implements BridgeEventProcessor {
   private RedisClient mRedisClient;
   private long mCounterExpire;
   private boolean mEnable;
+  private String mKeyPrefix;
 
   public RedisClient getRedisClient() {
     return mRedisClient;
@@ -34,29 +35,29 @@ public class SubscriberCountProcessor implements BridgeEventProcessor {
 
   @Override
   public Single<BridgeEventContext> process(Single<BridgeEventContext> pContext) {
-    
-    if(!isEnable()){
+
+    if (!isEnable()) {
       return pContext;
     }
-    
+
     return pContext
             .flatMap((ctx) -> {
               if (ctx.getBridgeEvent().type() == BridgeEventType.REGISTER) {
                 return mRedisClient
-                        .rxIncr(ctx.getAddress())
+                        .rxIncr(getKeyPrefix() + ctx.getAddress())
                         .flatMap((i) -> {
                           return mRedisClient
-                                  .rxExpire(ctx.getAddress(), getCounterExpire());
+                                  .rxExpire(getKeyPrefix() + ctx.getAddress(), getCounterExpire());
                         })
                         .map(count -> ctx);
               }
 
               if (ctx.getBridgeEvent().type() == BridgeEventType.UNREGISTER) {
                 return mRedisClient
-                        .rxDecr(ctx.getAddress())
+                        .rxDecr(getKeyPrefix() + ctx.getAddress())
                         .flatMap((i) -> {
                           return mRedisClient
-                                  .rxExpire(ctx.getAddress(), getCounterExpire());
+                                  .rxExpire(getKeyPrefix() + ctx.getAddress(), getCounterExpire());
                         })
                         .map(count -> ctx);
               }
@@ -71,6 +72,14 @@ public class SubscriberCountProcessor implements BridgeEventProcessor {
 
   public void setEnable(boolean pEnable) {
     this.mEnable = pEnable;
+  }
+
+  public String getKeyPrefix() {
+    return mKeyPrefix;
+  }
+
+  public void setKeyPrefix(String pKeyPrefix) {
+    this.mKeyPrefix = pKeyPrefix;
   }
 
 }

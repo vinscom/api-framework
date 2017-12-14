@@ -3,6 +3,7 @@ package io.vertx.reactivex.redis;
 import in.erail.glue.annotation.StartService;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.redis.RedisOptions;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -14,10 +15,10 @@ public class RedisClientInstance {
   private Vertx mVertx;
   private boolean mEnable;
   private RedisOptions mRedisOptions;
+  private Logger mLog;
 
   @StartService
   public void start() {
-
     if (isEnable()) {
       mRedisClient = RedisClient.create(getVertx(), getRedisOptions());
     }
@@ -49,6 +50,14 @@ public class RedisClientInstance {
 
   public void setRedisOptions(RedisOptions pRedisOptions) {
     this.mRedisOptions = pRedisOptions;
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }
