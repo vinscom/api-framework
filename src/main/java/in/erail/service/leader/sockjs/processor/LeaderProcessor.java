@@ -1,5 +1,6 @@
 package in.erail.service.leader.sockjs.processor;
 
+import io.reactivex.Single;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
@@ -14,15 +15,6 @@ public class LeaderProcessor implements BridgeEventProcessor {
 
   private String mBridgeEventUpdateTopicName;
   private Vertx mVertx;
-
-  @Override
-  public void process(BridgeEventContext pContext) {
-    if (pContext.getBridgeEvent().failed()) {
-      return;
-    }
-
-    sendBridgeEventUpdate(pContext.getBridgeEvent().type(), pContext.getAddress(), pContext.getBridgeEvent().socket().writeHandlerID());
-  }
 
   public void sendBridgeEventUpdate(BridgeEventType pType, String pAddress, String pSession) {
     BridgeEventUpdate beu = new BridgeEventUpdate();
@@ -46,6 +38,17 @@ public class LeaderProcessor implements BridgeEventProcessor {
 
   public void setVertx(Vertx pVertx) {
     this.mVertx = pVertx;
+  }
+
+  @Override
+  public Single<BridgeEventContext> process(Single<BridgeEventContext> pContext) {
+    return pContext
+            .doOnSuccess((ctx) -> {
+              if (ctx.getBridgeEvent().failed()) {
+                return;
+              }
+              sendBridgeEventUpdate(ctx.getBridgeEvent().type(), ctx.getAddress(), ctx.getBridgeEvent().socket().writeHandlerID());
+            });
   }
 
 }

@@ -1,5 +1,7 @@
 package io.vertx.reactivex.ext.web.handler.sockjs.processor;
 
+import com.google.common.base.Strings;
+import io.reactivex.Single;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEvent;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
@@ -15,23 +17,6 @@ public class AllowedTopicRegistrationProcessor implements BridgeEventProcessor {
   private Logger mLog;
   private List<String> mAddressAllowedToRegister;
   private List<String> mAddressAllowedToRegisterRegex;
-
-  @Override
-  public void process(BridgeEventContext pContext) {
-
-    BridgeEvent event = pContext.getBridgeEvent();
-
-    if (mAddressAllowedToRegister.isEmpty() && mAddressAllowedToRegisterRegex.isEmpty()) {
-      event.complete(true);
-      return;
-    }
-
-    if (!(matchAddress(pContext.getAddress()) || matchAddressRegex(pContext.getAddress()))) {
-      getLog().debug(() -> "Registration failed:" + pContext.getAddress());
-      event.fail("Can't subscribe to topic : " + pContext.getAddress());
-    }
-
-  }
 
   private boolean matchAddress(String pAddress) {
     return mAddressAllowedToRegister
@@ -67,6 +52,27 @@ public class AllowedTopicRegistrationProcessor implements BridgeEventProcessor {
 
   public void setLog(Logger pLog) {
     this.mLog = pLog;
+  }
+
+  @Override
+  public Single<BridgeEventContext> process(Single<BridgeEventContext> pContext) {
+    return pContext
+            .map((ctx) -> {
+              if (mAddressAllowedToRegister.isEmpty() && mAddressAllowedToRegisterRegex.isEmpty()) {
+                return ctx;
+              }
+
+              if (Strings.isNullOrEmpty(ctx.getAddress())) {
+                getLog().error("Address missing");
+                return ctx;
+              }
+
+              if (!(matchAddress(ctx.getAddress()) || matchAddressRegex(ctx.getAddress()))) {
+                getLog().debug(() -> "Registration failed:" + ctx.getAddress());
+                ctx.getBridgeEvent().fail("Can't subscribe to topic : " + ctx.getAddress());
+              }
+              return ctx;
+            });
   }
 
 }

@@ -1,10 +1,12 @@
 package io.vertx.reactivex.ext.web.handler.sockjs;
 
+import io.reactivex.Single;
+
 /**
  *
  * @author vinay
  */
 public interface BridgeEventProcessor {
 
-  void process(BridgeEventContext pContext);
+  Single<BridgeEventContext> process(Single<BridgeEventContext> pContext);
 }

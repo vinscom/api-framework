@@ -1,7 +1,10 @@
 package io.vertx.reactivex.ext.web.handler.sockjs;
 
 import in.erail.glue.component.ServiceArray;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.vertx.core.Handler;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -9,6 +12,7 @@ import io.vertx.core.Handler;
  */
 public class BridgeEventHandler implements Handler<BridgeEvent> {
 
+  private Logger mLog;
   private ServiceArray mPublishProcessors;
   private ServiceArray mReceiveProcessors;
   private ServiceArray mRegisterProcessors;
@@ -51,27 +55,35 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
         process(getUnregisterProcessors(), pEvent);
         break;
     }
-
-    if (!pEvent.failed()) {
-      pEvent.complete(true);
-    }
   }
 
   protected void process(ServiceArray pProcessors, BridgeEvent pEvent) {
     if (pProcessors.getServices() == null || pProcessors.getServices().isEmpty()) {
+      pEvent.complete(true);
       return;
     }
 
     BridgeEventContext ctx = new BridgeEventContext();
     ctx.setBridgeEvent(pEvent);
 
-    pProcessors
-            .getServices()
-            .stream()
-            .forEachOrdered((obj) -> {
-              BridgeEventProcessor pro = (BridgeEventProcessor) obj;
-              pro.process(ctx);
-            });
+    Observable
+            .fromIterable(pProcessors.getServices())
+            .reduce(Single.just(ctx), (acc, processor) -> {
+              getLog().debug(() -> String.format("Processor [%s]", processor.getClass().getCanonicalName()));
+              BridgeEventProcessor p = (BridgeEventProcessor) processor;
+              return p.process(acc);
+            })
+            .flatMap((context) -> context)
+            .doFinally(() -> {
+              if (ctx.getBridgeEvent().failed()) {
+                getLog().debug(() -> String.format("BridgeEvent Failed"));
+                return;
+              }
+              getLog().debug(() -> String.format("BridgeEvent Success"));
+              ctx.getBridgeEvent().complete(true);
+            })
+            .subscribe();
+
   }
 
   public ServiceArray getPublishProcessors() {
@@ -144,6 +156,14 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
 
   public void setUnregisterProcessors(ServiceArray pUnregisterProcessors) {
     this.mUnregisterProcessors = pUnregisterProcessors;
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }
