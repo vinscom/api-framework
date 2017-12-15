@@ -16,6 +16,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
 
   private RedisClient mRedisClient;
   private boolean mEnable;
+  private String mKeyPrefix;
 
   public RedisClient getRedisClient() {
     return mRedisClient;
@@ -43,7 +44,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
               JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
 
               return getRedisClient()
-                      .rxGet(ctx.getAddress())
+                      .rxGet(getKeyPrefix() + ctx.getAddress())
                       .map((count) -> {
                         if (Strings.isNullOrEmpty(count)) {
                           return ctx;
@@ -62,6 +63,14 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
 
   public void setEnable(boolean pEnable) {
     this.mEnable = pEnable;
+  }
+
+  public String getKeyPrefix() {
+    return mKeyPrefix;
+  }
+
+  public void setKeyPrefix(String pKeyPrefix) {
+    this.mKeyPrefix = pKeyPrefix;
   }
 
 }
