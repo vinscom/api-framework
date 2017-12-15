@@ -74,14 +74,14 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
               return p.process(acc);
             })
             .doOnSuccess((t) -> {
-              getLog().debug(() -> String.format("Reduce Success"));
+              getLog().debug(() -> "[NINJA]Reduce Success" + ctx.getAddress());
             })
             .flatMap((context) -> context)
             .doOnSuccess((t) -> {
-              getLog().debug(() -> String.format("Flatmap Success"));
+              getLog().debug(() -> "[NINJA]Flatmap Success" + ctx.getAddress());
             })
             .doFinally(() -> {
-              getLog().debug(() -> String.format("Finally Called"));
+              getLog().debug(() -> "[NINJA]Finally Called" + ctx.getAddress());
               if (ctx.getBridgeEvent().failed()) {
                 getLog().debug(() -> String.format("BridgeEvent Failed"));
                 return;
