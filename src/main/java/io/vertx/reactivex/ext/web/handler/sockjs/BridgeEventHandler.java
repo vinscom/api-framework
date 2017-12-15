@@ -73,8 +73,15 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
               BridgeEventProcessor p = (BridgeEventProcessor) processor;
               return p.process(acc);
             })
+            .doOnSuccess((t) -> {
+              getLog().debug(() -> String.format("Reduce Success"));
+            })
             .flatMap((context) -> context)
+            .doOnSuccess((t) -> {
+              getLog().debug(() -> String.format("Flatmap Success"));
+            })
             .doFinally(() -> {
+              getLog().debug(() -> String.format("Finally Called"));
               if (ctx.getBridgeEvent().failed()) {
                 getLog().debug(() -> String.format("BridgeEvent Failed"));
                 return;
