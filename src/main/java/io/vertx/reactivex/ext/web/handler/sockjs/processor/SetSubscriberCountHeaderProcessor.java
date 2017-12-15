@@ -54,6 +54,9 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
               return getRedisClient()
                       .rxGet(getKeyPrefix() + ctx.getAddress())
                       .map((count) -> {
+
+                        getLog().debug(() -> String.format("Redis:KEY:[%s],VALUE:[%s]", getKeyPrefix() + ctx.getAddress(), count));
+
                         if (Strings.isNullOrEmpty(count)) {
                           return ctx;
                         }
