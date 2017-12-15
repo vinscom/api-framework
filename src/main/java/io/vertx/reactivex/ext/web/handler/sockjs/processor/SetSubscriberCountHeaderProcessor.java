@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
 import io.vertx.reactivex.redis.RedisClient;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -18,6 +19,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
   private boolean mEnable;
   private String mKeyPrefix;
   private String mCountHeaderFieldName;
+  private Logger mLog;
 
   public RedisClient getRedisClient() {
     return mRedisClient;
@@ -41,6 +43,11 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
                 return Single.just(ctx);
               }
 
+              if(Strings.isNullOrEmpty(ctx.getAddress())){
+                getLog().error(() -> "Address can't empty");
+                return Single.just(ctx);
+              }
+              
               JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
               JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
 
@@ -53,6 +60,9 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
                         headers.put(getCountHeaderFieldName(), count);
                         ctx.getBridgeEvent().setRawMessage(rawMsg);
                         return ctx;
+                      })
+                      .doOnError((err) -> {
+                        getLog().error(() -> "Error getting value from redis:" + err);
                       });
 
             });
@@ -80,6 +90,14 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
 
   public void setCountHeaderFieldName(String pCountHeaderFieldName) {
     this.mCountHeaderFieldName = pCountHeaderFieldName;
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }

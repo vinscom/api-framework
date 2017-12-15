@@ -1,11 +1,13 @@
 package in.erail.service.leader.sockjs.processor;
 
+import com.google.common.base.Strings;
 import io.reactivex.Single;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventUpdate;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -15,6 +17,7 @@ public class LeaderProcessor implements BridgeEventProcessor {
 
   private String mBridgeEventUpdateTopicName;
   private Vertx mVertx;
+  private Logger mLog;
 
   public void sendBridgeEventUpdate(BridgeEventType pType, String pAddress, String pSession) {
     BridgeEventUpdate beu = new BridgeEventUpdate();
@@ -47,8 +50,22 @@ public class LeaderProcessor implements BridgeEventProcessor {
               if (ctx.getBridgeEvent().failed()) {
                 return;
               }
+              
+              if(Strings.isNullOrEmpty(ctx.getAddress())){
+                getLog().error(() -> "Address can't empty");
+                return;
+              }
+              
               sendBridgeEventUpdate(ctx.getBridgeEvent().type(), ctx.getAddress(), ctx.getBridgeEvent().socket().writeHandlerID());
             });
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }

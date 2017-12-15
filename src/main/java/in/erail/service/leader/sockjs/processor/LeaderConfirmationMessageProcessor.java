@@ -1,10 +1,12 @@
 package in.erail.service.leader.sockjs.processor;
 
+import com.google.common.base.Strings;
 import in.erail.common.FramworkConstants;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -14,6 +16,7 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
 
   private String mSendMessageHeaderConfirmMsgFieldName;
   private String mSendMessageHeaderSessionFieldName;
+  private Logger mLog;
 
   public String getSendMessageHeaderConfirmMsgFieldName() {
     return mSendMessageHeaderConfirmMsgFieldName;
@@ -39,6 +42,11 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
               if (ctx.getBridgeEvent().failed()) {
                 return ctx;
               }
+              
+              if(Strings.isNullOrEmpty(ctx.getAddress())){
+                getLog().error(() -> "Address can't empty");
+                return ctx;
+              }
 
               JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
               JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
@@ -51,6 +59,14 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
 
               return ctx;
             });
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }

@@ -69,7 +69,7 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
     Observable
             .fromIterable(pProcessors.getServices())
             .reduce(Single.just(ctx), (acc, processor) -> {
-              getLog().debug(() -> String.format("Processor [%s]", processor.getClass().getCanonicalName()));
+              getLog().trace(() -> String.format("Processor [%s]", processor.getClass().getCanonicalName()));
               BridgeEventProcessor p = (BridgeEventProcessor) processor;
               return p.process(acc);
             })
@@ -79,7 +79,7 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
                 getLog().debug(() -> String.format("BridgeEvent Failed"));
                 return;
               }
-              getLog().debug(() -> String.format("BridgeEvent Success"));
+              getLog().trace(() -> String.format("BridgeEvent Success"));
               ctx.getBridgeEvent().complete(true);
             })
             .subscribe();
