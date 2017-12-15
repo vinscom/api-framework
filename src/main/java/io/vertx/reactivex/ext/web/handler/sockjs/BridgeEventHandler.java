@@ -63,25 +63,26 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
       return;
     }
 
-    BridgeEventContext bridgeEventCtx = new BridgeEventContext();
-    bridgeEventCtx.setBridgeEvent(pEvent);
+    BridgeEventContext ctx = new BridgeEventContext();
+    ctx.setBridgeEvent(pEvent);
 
     Observable
             .fromIterable(pProcessors.getServices())
-            .reduce(Single.just(bridgeEventCtx), (acc, processor) -> {
+            .reduce(Single.just(ctx), (acc, processor) -> {
               getLog().trace(() -> String.format("Processor [%s]", processor.getClass().getCanonicalName()));
               BridgeEventProcessor p = (BridgeEventProcessor) processor;
               return p.process(acc);
             })
             .flatMap((context) -> context)
-            .subscribe((ctx) -> {
+            .doFinally(() -> {
               if (ctx.getBridgeEvent().failed()) {
                 getLog().debug(() -> String.format("BridgeEvent Failed"));
                 return;
               }
               getLog().trace(() -> String.format("BridgeEvent Success"));
               ctx.getBridgeEvent().complete(true);
-            });
+            })
+            .subscribe();
 
   }
 
