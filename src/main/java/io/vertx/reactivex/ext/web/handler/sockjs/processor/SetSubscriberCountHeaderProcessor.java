@@ -17,6 +17,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
   private RedisClient mRedisClient;
   private boolean mEnable;
   private String mKeyPrefix;
+  private String mCountHeaderFieldName;
 
   public RedisClient getRedisClient() {
     return mRedisClient;
@@ -49,7 +50,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
                         if (Strings.isNullOrEmpty(count)) {
                           return ctx;
                         }
-                        headers.put("count", count);
+                        headers.put(getCountHeaderFieldName(), count);
                         ctx.getBridgeEvent().setRawMessage(rawMsg);
                         return ctx;
                       });
@@ -71,6 +72,14 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
 
   public void setKeyPrefix(String pKeyPrefix) {
     this.mKeyPrefix = pKeyPrefix;
+  }
+
+  public String getCountHeaderFieldName() {
+    return mCountHeaderFieldName;
+  }
+
+  public void setCountHeaderFieldName(String pCountHeaderFieldName) {
+    this.mCountHeaderFieldName = pCountHeaderFieldName;
   }
 
 }
