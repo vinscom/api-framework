@@ -1,10 +1,12 @@
 package io.vertx.reactivex.ext.web.handler.sockjs.processor;
 
+import com.google.common.base.Strings;
 import io.reactivex.Single;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
 import io.vertx.reactivex.redis.RedisClient;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
@@ -16,6 +18,7 @@ public class SubscriberCountProcessor implements BridgeEventProcessor {
   private long mCounterExpire;
   private boolean mEnable;
   private String mKeyPrefix;
+  private Logger mLog;
 
   public RedisClient getRedisClient() {
     return mRedisClient;
@@ -42,6 +45,12 @@ public class SubscriberCountProcessor implements BridgeEventProcessor {
 
     return pContext
             .flatMap((ctx) -> {
+              
+              if(Strings.isNullOrEmpty(ctx.getAddress())){
+                getLog().error(() -> "Address can't empty");
+                return Single.just(ctx);
+              }
+              
               if (ctx.getBridgeEvent().type() == BridgeEventType.REGISTER) {
                 return mRedisClient
                         .rxIncr(getKeyPrefix() + ctx.getAddress())
@@ -80,6 +89,14 @@ public class SubscriberCountProcessor implements BridgeEventProcessor {
 
   public void setKeyPrefix(String pKeyPrefix) {
     this.mKeyPrefix = pKeyPrefix;
+  }
+
+  public Logger getLog() {
+    return mLog;
+  }
+
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }

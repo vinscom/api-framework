@@ -63,7 +63,7 @@ public class AllowedTopicRegistrationProcessor implements BridgeEventProcessor {
               }
 
               if (Strings.isNullOrEmpty(ctx.getAddress())) {
-                getLog().error("Address missing");
+                getLog().error("Address can't empty");
                 return ctx;
               }
 
