@@ -26,6 +26,7 @@ public class FramworkConstants {
   
   public static class SockJS {
     public static final String BRIDGE_EVENT_RAW_MESSAGE_ADDRESS = "address";
+    public static final String BRIDGE_EVENT_RAW_MESSAGE_HEADERS = "headers";
   }
 
 }

@@ -26,10 +26,6 @@ public class MongoClientInstance {
     return mMongoClient;
   }
 
-  public void setMongoClient(MongoClient pMongoClient) {
-    this.mMongoClient = pMongoClient;
-  }
-
   public Vertx getVertx() {
     return mVertx;
   }

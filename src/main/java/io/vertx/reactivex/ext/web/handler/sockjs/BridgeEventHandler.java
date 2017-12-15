@@ -1,10 +1,9 @@
 package io.vertx.reactivex.ext.web.handler.sockjs;
 
-import in.erail.common.FramworkConstants;
+import in.erail.glue.component.ServiceArray;
+import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.vertx.core.Handler;
-import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.Vertx;
-import java.util.List;
 import org.apache.logging.log4j.Logger;
 
 /**
@@ -13,136 +12,150 @@ import org.apache.logging.log4j.Logger;
  */
 public class BridgeEventHandler implements Handler<BridgeEvent> {
 
-  private List<String> mAddressAllowedToRegister;
-  private List<String> mAddressAllowedToRegisterRegex;
   private Logger mLog;
-  private Vertx mVertx;
+  private ServiceArray mPublishProcessors;
+  private ServiceArray mReceiveProcessors;
+  private ServiceArray mRegisterProcessors;
+  private ServiceArray mSendProcessors;
+  private ServiceArray mSocketClosedProcessors;
+  private ServiceArray mSocketCreatedProcessors;
+  private ServiceArray mSocketIdleProcessors;
+  private ServiceArray mSoketPingProcessors;
+  private ServiceArray mUnregisterProcessors;
 
   @Override
   public void handle(BridgeEvent pEvent) {
 
-    JsonObject rawMessage = pEvent.getRawMessage();
-    String address = null;
-
-    if (rawMessage != null) {
-      address = rawMessage.getString(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_ADDRESS);
-    }
-
     switch (pEvent.type()) {
       case PUBLISH:
-        handlePublish(address, pEvent);
+        process(getPublishProcessors(), pEvent);
         break;
       case RECEIVE:
-        handleRecieve(address, pEvent);
+        process(getReceiveProcessors(), pEvent);
         break;
       case REGISTER:
-        handleRegister(address, pEvent);
+        process(getRegisterProcessors(), pEvent);
         break;
       case SEND:
-        handleSend(address, pEvent);
+        process(getSendProcessors(), pEvent);
         break;
       case SOCKET_CLOSED:
-        handleSocketClose(pEvent);
+        process(getSocketClosedProcessors(), pEvent);
         break;
       case SOCKET_CREATED:
-        handleSocketCreated(pEvent);
+        process(getSocketCreatedProcessors(), pEvent);
         break;
       case SOCKET_IDLE:
-        handleSocketIdle(pEvent);
+        process(getSocketIdleProcessors(), pEvent);
         break;
       case SOCKET_PING:
-        handleSocketPing(pEvent);
+        process(getSoketPingProcessors(), pEvent);
         break;
       case UNREGISTER:
-        handleUnregister(address, pEvent);
+        process(getUnregisterProcessors(), pEvent);
         break;
     }
-
   }
 
-  public void handleRegister(String pAddress, BridgeEvent pEvent) {
-
-    getLog().debug(() -> "BRIDGE_EVENT_HANDLER_REGISTER:" + pAddress);
-
-    if (mAddressAllowedToRegister.isEmpty() && mAddressAllowedToRegisterRegex.isEmpty()) {
+  protected void process(ServiceArray pProcessors, BridgeEvent pEvent) {
+    if (pProcessors.getServices() == null || pProcessors.getServices().isEmpty()) {
       pEvent.complete(true);
       return;
     }
 
-    if (!(matchAddress(pAddress) || matchAddressRegex(pAddress))) {
-      pEvent.fail("Can't subscribe to topic : " + pAddress);
-    } else {
-      pEvent.complete(true);
-    }
+    BridgeEventContext ctx = new BridgeEventContext();
+    ctx.setBridgeEvent(pEvent);
+
+    Observable
+            .fromIterable(pProcessors.getServices())
+            .reduce(Single.just(ctx), (acc, processor) -> {
+              getLog().debug(() -> String.format("Processor [%s]", processor.getClass().getCanonicalName()));
+              BridgeEventProcessor p = (BridgeEventProcessor) processor;
+              return p.process(acc);
+            })
+            .flatMap((context) -> context)
+            .doFinally(() -> {
+              if (ctx.getBridgeEvent().failed()) {
+                getLog().debug(() -> String.format("BridgeEvent Failed"));
+                return;
+              }
+              getLog().debug(() -> String.format("BridgeEvent Success"));
+              ctx.getBridgeEvent().complete(true);
+            })
+            .subscribe();
+
   }
 
-  private boolean matchAddress(String pAddress) {
-    return mAddressAllowedToRegister
-            .stream()
-            .anyMatch((allowedAddress) -> (pAddress.equals(allowedAddress)));
+  public ServiceArray getPublishProcessors() {
+    return mPublishProcessors;
   }
 
-  private boolean matchAddressRegex(String pAddress) {
-    return mAddressAllowedToRegisterRegex
-            .stream()
-            .anyMatch((allowedAddress) -> (pAddress.matches(allowedAddress)));
+  public void setPublishProcessors(ServiceArray pPublishProcessors) {
+    this.mPublishProcessors = pPublishProcessors;
   }
 
-  public List<String> getAddressAllowedToRegister() {
-    return mAddressAllowedToRegister;
+  public ServiceArray getReceiveProcessors() {
+    return mReceiveProcessors;
   }
 
-  public void setAddressAllowedToRegister(List<String> pAddressAllowedToRegister) {
-    this.mAddressAllowedToRegister = pAddressAllowedToRegister;
+  public void setReceiveProcessors(ServiceArray pReceiveProcessors) {
+    this.mReceiveProcessors = pReceiveProcessors;
   }
 
-  public List<String> getAddressAllowedToRegisterRegex() {
-    return mAddressAllowedToRegisterRegex;
+  public ServiceArray getRegisterProcessors() {
+    return mRegisterProcessors;
   }
 
-  public void setAddressAllowedToRegisterRegex(List<String> pAddressAllowedToRegisterRegex) {
-    this.mAddressAllowedToRegisterRegex = pAddressAllowedToRegisterRegex;
+  public void setRegisterProcessors(ServiceArray pRegisterProcessors) {
+    this.mRegisterProcessors = pRegisterProcessors;
   }
 
-  public void handlePublish(String pAddress, BridgeEvent pEvent) {
-    pEvent.complete(true);
+  public ServiceArray getSendProcessors() {
+    return mSendProcessors;
   }
 
-  public void handleRecieve(String pAddress, BridgeEvent pEvent) {
-    pEvent.complete(true);
+  public void setSendProcessors(ServiceArray pSendProcessors) {
+    this.mSendProcessors = pSendProcessors;
   }
 
-  public void handleSend(String pAddress, BridgeEvent pEvent) {
-    pEvent.complete(true);
+  public ServiceArray getSocketClosedProcessors() {
+    return mSocketClosedProcessors;
   }
 
-  public void handleSocketClose(BridgeEvent pEvent) {
-    pEvent.complete(true);
+  public void setSocketClosedProcessors(ServiceArray pSocketClosedProcessors) {
+    this.mSocketClosedProcessors = pSocketClosedProcessors;
   }
 
-  public void handleSocketCreated(BridgeEvent pEvent) {
-    pEvent.complete(true);
+  public ServiceArray getSocketCreatedProcessors() {
+    return mSocketCreatedProcessors;
   }
 
-  public void handleSocketIdle(BridgeEvent pEvent) {
-    pEvent.complete(true);
+  public void setSocketCreatedProcessors(ServiceArray pSocketCreatedProcessors) {
+    this.mSocketCreatedProcessors = pSocketCreatedProcessors;
   }
 
-  public void handleSocketPing(BridgeEvent pEvent) {
-    pEvent.complete(true);
+  public ServiceArray getSocketIdleProcessors() {
+    return mSocketIdleProcessors;
   }
 
-  public void handleUnregister(String pAddress, BridgeEvent pEvent) {
-    getLog().debug(() -> "BRIDGE_EVENT_HANDLER_UNREGISTER:" + pAddress);
-    pEvent.complete(true);
+  public void setSocketIdleProcessors(ServiceArray pSocketIdleProcessors) {
+    this.mSocketIdleProcessors = pSocketIdleProcessors;
   }
 
-  public Vertx getVertx() {
-    return mVertx;
+  public ServiceArray getSoketPingProcessors() {
+    return mSoketPingProcessors;
   }
 
-  public void setVertx(Vertx pVertx) {
-    this.mVertx = pVertx;
+  public void setSoketPingProcessors(ServiceArray pSoketPingProcessors) {
+    this.mSoketPingProcessors = pSoketPingProcessors;
+  }
+
+  public ServiceArray getUnregisterProcessors() {
+    return mUnregisterProcessors;
+  }
+
+  public void setUnregisterProcessors(ServiceArray pUnregisterProcessors) {
+    this.mUnregisterProcessors = pUnregisterProcessors;
   }
 
   public Logger getLog() {

@@ -13,6 +13,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,7 +33,8 @@ public class SecurityTools {
   private Logger mLog;
   private Vertx mVertx;
   private SecureRandom mRandom;
-  private CompletableFuture<SecretKeySpec> mKeySpec = new CompletableFuture<>();
+  private final CompletableFuture<SecretKeySpec> mKeySpec = new CompletableFuture<>();
+  private final CompletableFuture<String> mGlobalUniqueString = new CompletableFuture<>();
 
   @StartService
   public void startup() {
@@ -98,7 +100,22 @@ public class SecurityTools {
             })
             .subscribe((key) -> {
               mKeySpec.complete(new SecretKeySpec(key, "AES"));
+              String unique = Base64.getEncoder().encodeToString(Arrays.copyOfRange(key, 0,5));
+              mGlobalUniqueString.complete(unique.replace("=", ""));
             });
+  }
+
+  /**
+   * Unique string across cluster. Changes on each restart of cluster.
+   * @return 
+   */
+  public String getGlobalUniqueString() {
+    try {
+      return mGlobalUniqueString.get();
+    } catch (InterruptedException | ExecutionException ex) {
+      getLog().error("Global Unique not working", ex);
+    }
+    return "ERROR_GLOBAL_KEY";
   }
 
   private byte[] concatenateByteArrays(byte[] a, byte[] b) {

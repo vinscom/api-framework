@@ -1,0 +1,56 @@
+package in.erail.service.leader.sockjs.processor;
+
+import in.erail.common.FramworkConstants;
+import io.reactivex.Single;
+import io.vertx.core.json.JsonObject;
+import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
+import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
+
+/**
+ *
+ * @author vinay
+ */
+public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor {
+
+  private String mSendMessageHeaderConfirmMsgFieldName;
+  private String mSendMessageHeaderSessionFieldName;
+
+  public String getSendMessageHeaderConfirmMsgFieldName() {
+    return mSendMessageHeaderConfirmMsgFieldName;
+  }
+
+  public void setSendMessageHeaderConfirmMsgFieldName(String pSendMessageHeaderConfirmMsgFieldName) {
+    this.mSendMessageHeaderConfirmMsgFieldName = pSendMessageHeaderConfirmMsgFieldName;
+  }
+
+  public String getSendMessageHeaderSessionFieldName() {
+    return mSendMessageHeaderSessionFieldName;
+  }
+
+  public void setSendMessageHeaderSessionFieldName(String pSendMessageHeaderSessionFieldName) {
+    this.mSendMessageHeaderSessionFieldName = pSendMessageHeaderSessionFieldName;
+  }
+
+  @Override
+  public Single<BridgeEventContext> process(Single<BridgeEventContext> pContext) {
+    return pContext
+            .map((ctx) -> {
+
+              if (ctx.getBridgeEvent().failed()) {
+                return ctx;
+              }
+
+              JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
+              JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
+
+              if (headers.containsKey(getSendMessageHeaderConfirmMsgFieldName())) {
+                //Only add session on confirmation messages
+                headers.put(getSendMessageHeaderSessionFieldName(), ctx.getBridgeEvent().socket().writeHandlerID());
+                ctx.getBridgeEvent().setRawMessage(rawMsg);
+              }
+
+              return ctx;
+            });
+  }
+
+}
