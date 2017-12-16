@@ -52,23 +52,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
 
               return getRedisClient()
                       .rxGet(ctx.getAddressKey())
-                      .map((count) -> {
-                        
-                        String headerValue = count;
-                        
-                        if (Strings.isNullOrEmpty(count)) {
-                          getLog().debug(() -> String.format("[%s] Redis:KEY:[%s], Key value is null, Setting header value to 0", ctx.getId(), ctx.getAddressKey()));
-                          headerValue = "0";
-                        } else {
-                          getLog().debug(() -> String.format("[%s] Found Redis:KEY:[%s],VALUE:[%s]", ctx.getId(), ctx.getAddressKey(), count));
-                        }
-                        
-                        JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
-                        JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
-                        headers.put(getCountHeaderFieldName(), headerValue);
-                        ctx.getBridgeEvent().setRawMessage(rawMsg);
-                        return ctx;
-                      })
+                      .map((count) -> setHeader(count, ctx))
                       .doOnError((err) -> {
                         getLog().error(String.format("[%s] Error getting value for Key[%s] from redis", ctx.getId(), ctx.getAddressKey()),err);
                       });
@@ -76,6 +60,23 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
             });
   }
 
+  protected BridgeEventContext setHeader(String count, BridgeEventContext ctx){
+    String headerValue = count;
+    
+    if (Strings.isNullOrEmpty(count)) {
+      getLog().debug(() -> String.format("[%s] Redis:KEY:[%s], Key value is null, Setting header value to 0", ctx.getId(), ctx.getAddressKey()));
+      headerValue = "0";
+    } else {
+      getLog().debug(() -> String.format("[%s] Found Redis:KEY:[%s],VALUE:[%s]", ctx.getId(), ctx.getAddressKey(), count));
+    }
+    
+    JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
+    JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
+    headers.put(getCountHeaderFieldName(), headerValue);
+    ctx.getBridgeEvent().setRawMessage(rawMsg);
+    return ctx;
+  }
+  
   public boolean isEnable() {
     return mEnable;
   }
