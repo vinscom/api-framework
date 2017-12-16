@@ -70,7 +70,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
       getLog().debug(() -> String.format("[%s] Found Redis:KEY:[%s],VALUE:[%s]", ctx.getId(), ctx.getAddressKey(), count));
     }
 
-    JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
+    JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage().copy();
     JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
     
     if (headers == null) {
@@ -78,6 +78,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
     }
     
     headers.put(getCountHeaderFieldName(), headerValue);
+    rawMsg.put(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS, headers);
     ctx.getBridgeEvent().setRawMessage(rawMsg);
     return ctx;
   }
