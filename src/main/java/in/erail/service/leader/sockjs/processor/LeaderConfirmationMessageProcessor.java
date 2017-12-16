@@ -51,7 +51,7 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
               JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
               JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
 
-              if (headers.containsKey(getSendMessageHeaderConfirmMsgFieldName())) {
+              if (headers != null && headers.containsKey(getSendMessageHeaderConfirmMsgFieldName())) {
                 //Only add session on confirmation messages
                 String session = ctx.getBridgeEvent().socket().writeHandlerID();
                 getLog().debug(() -> String.format("[%s] Header:[%s] found in message", ctx.getId(), getSendMessageHeaderConfirmMsgFieldName()));
