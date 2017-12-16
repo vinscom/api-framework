@@ -45,28 +45,38 @@ public class SubscriberCountProcessor implements BridgeEventProcessor {
 
     return pContext
             .flatMap((ctx) -> {
-              
-              if(Strings.isNullOrEmpty(ctx.getAddress())){
-                getLog().error(() -> "Address can't empty");
+
+              if (Strings.isNullOrEmpty(ctx.getAddress())) {
+                getLog().error(() -> String.format("[%s] Address can't empty", ctx.getId() != null ? ctx.getId() : ""));
                 return Single.just(ctx);
               }
-              
+
               if (ctx.getBridgeEvent().type() == BridgeEventType.REGISTER) {
+                getLog().debug(() -> String.format("[%s] Processing [%s] Type", ctx.getId(), ctx.getBridgeEvent().type().toString()));
                 return mRedisClient
-                        .rxIncr(getKeyPrefix() + ctx.getAddress())
+                        .rxIncr(ctx.getAddressKey())
                         .flatMap((i) -> {
+                          getLog().debug(() -> String.format("[%s] Incremented Key:[%s],Value:[%d]", ctx.getId(), ctx.getAddressKey(), i));
                           return mRedisClient
-                                  .rxExpire(getKeyPrefix() + ctx.getAddress(), getCounterExpire());
+                                  .rxExpire(ctx.getAddressKey(), getCounterExpire());
+                        })
+                        .doOnSuccess((t) -> {
+                          getLog().debug(() -> String.format("[%s] Expiry Set Key:[%s],Time:[%d] during REGISTER", ctx.getId(), ctx.getAddressKey(), getCounterExpire()));
                         })
                         .map(count -> ctx);
               }
 
               if (ctx.getBridgeEvent().type() == BridgeEventType.UNREGISTER) {
+                getLog().debug(() -> String.format("[%s] Processing [%s] Type", ctx.getId(), ctx.getBridgeEvent().type().toString()));
                 return mRedisClient
-                        .rxDecr(getKeyPrefix() + ctx.getAddress())
+                        .rxDecr(ctx.getAddressKey())
                         .flatMap((i) -> {
+                          getLog().debug(() -> String.format("[%s] Decremented Key:[%s],Value:[%d]", ctx.getId(), ctx.getAddressKey(), i));
                           return mRedisClient
-                                  .rxExpire(getKeyPrefix() + ctx.getAddress(), getCounterExpire());
+                                  .rxExpire(ctx.getAddressKey(), getCounterExpire());
+                        })
+                        .doOnSuccess((t) -> {
+                          getLog().debug(() -> String.format("[%s] Expiry Set Key:[%s],Time:[%d] during UNREGISTER", ctx.getId(), ctx.getAddressKey(), getCounterExpire()));
                         })
                         .map(count -> ctx);
               }

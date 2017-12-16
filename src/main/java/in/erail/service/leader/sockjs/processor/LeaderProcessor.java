@@ -19,12 +19,12 @@ public class LeaderProcessor implements BridgeEventProcessor {
   private Vertx mVertx;
   private Logger mLog;
 
-  public void sendBridgeEventUpdate(BridgeEventType pType, String pAddress, String pSession) {
+  public BridgeEventUpdate createBridgeEventUpdate(BridgeEventType pType, String pAddress, String pSession) {
     BridgeEventUpdate beu = new BridgeEventUpdate();
     beu.setAddress(pAddress);
     beu.setType(pType);
     beu.setSession(pSession);
-    getVertx().eventBus().send(getBridgeEventUpdateTopicName(), beu.toJson());
+    return beu;
   }
 
   public String getBridgeEventUpdateTopicName() {
@@ -48,15 +48,18 @@ public class LeaderProcessor implements BridgeEventProcessor {
     return pContext
             .doOnSuccess((ctx) -> {
               if (ctx.getBridgeEvent().failed()) {
+                getLog().debug(() -> String.format("[%s] Failed Event", ctx.getId()));
                 return;
               }
-              
-              if(Strings.isNullOrEmpty(ctx.getAddress())){
-                getLog().error(() -> "Address can't empty");
+
+              if (Strings.isNullOrEmpty(ctx.getAddress())) {
+                getLog().error(() -> String.format("[%s] Address can't empty", ctx.getId() != null ? ctx.getId() : ""));
                 return;
               }
-              
-              sendBridgeEventUpdate(ctx.getBridgeEvent().type(), ctx.getAddress(), ctx.getBridgeEvent().socket().writeHandlerID());
+
+              BridgeEventUpdate beu = createBridgeEventUpdate(ctx.getBridgeEvent().type(), ctx.getAddress(), ctx.getBridgeEvent().socket().writeHandlerID());
+              getLog().debug(() -> String.format("[%s] Sending Message:[%s] to Topic:[%s]", ctx.getId(), beu.toJson().toString(), getBridgeEventUpdateTopicName()));
+              getVertx().eventBus().send(getBridgeEventUpdateTopicName(), beu.toJson());
             });
   }
 
