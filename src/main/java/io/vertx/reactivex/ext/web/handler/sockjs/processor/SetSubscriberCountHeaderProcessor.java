@@ -44,28 +44,34 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
               }
 
               if (Strings.isNullOrEmpty(ctx.getAddress())) {
-                getLog().error(() -> "Address can't empty");
+                getLog().error(() -> String.format("[%s] Address can't empty", ctx.getId() != null ? ctx.getId() : ""));
                 return Single.just(ctx);
               }
 
               JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
               JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
 
+              getLog().debug(() -> String.format("[%s] Trying to fetch value of Redis:KEY:[%s]", ctx.getId(), ctx.getAddressKey()));
+
               return getRedisClient()
-                      .rxGet(getKeyPrefix() + ctx.getAddress())
+                      .rxGet(ctx.getAddressKey())
                       .map((count) -> {
-
-                        getLog().debug(() -> String.format("Redis:KEY:[%s],VALUE:[%s]", getKeyPrefix() + ctx.getAddress(), count));
-
+                        
+                        String headerValue = count;
+                        
                         if (Strings.isNullOrEmpty(count)) {
-                          return ctx;
+                          getLog().debug(() -> String.format("[%s] Redis:KEY:[%s], Key value is null, Setting header value to 0", ctx.getId(), ctx.getAddressKey()));
+                          headerValue = "0";
+                        } else {
+                          getLog().debug(() -> String.format("[%s] Found Redis:KEY:[%s],VALUE:[%s]", ctx.getId(), ctx.getAddressKey(), count));
                         }
-                        headers.put(getCountHeaderFieldName(), count);
+                        
+                        headers.put(getCountHeaderFieldName(), headerValue);
                         ctx.getBridgeEvent().setRawMessage(rawMsg);
                         return ctx;
                       })
                       .doOnError((err) -> {
-                        getLog().error(() -> String.format("Error getting value for Key[%s] from redis: [%s]", getKeyPrefix() + ctx.getAddress(), err.getCause().getMessage()));
+                        getLog().error(() -> String.format("[%s] Error getting value for Key[%s] from redis: [%s]", ctx.getId(), ctx.getAddressKey(), err.getMessage()));
                       });
 
             });

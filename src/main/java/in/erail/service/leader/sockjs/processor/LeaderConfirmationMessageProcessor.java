@@ -42,9 +42,9 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
               if (ctx.getBridgeEvent().failed()) {
                 return ctx;
               }
-              
-              if(Strings.isNullOrEmpty(ctx.getAddress())){
-                getLog().error(() -> "Address can't empty");
+
+              if (Strings.isNullOrEmpty(ctx.getAddress())) {
+                getLog().error(() -> String.format("[%s] Address can't empty", ctx.getId() != null ? ctx.getId() : ""));
                 return ctx;
               }
 
@@ -53,8 +53,13 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
 
               if (headers.containsKey(getSendMessageHeaderConfirmMsgFieldName())) {
                 //Only add session on confirmation messages
-                headers.put(getSendMessageHeaderSessionFieldName(), ctx.getBridgeEvent().socket().writeHandlerID());
+                String session = ctx.getBridgeEvent().socket().writeHandlerID();
+                getLog().debug(() -> String.format("[%s] Header:[%s] found in message", ctx.getId(), getSendMessageHeaderConfirmMsgFieldName()));
+                getLog().debug(() -> String.format("[%s] Setting Header:[%s] to Session:[%s]", ctx.getId(), getSendMessageHeaderConfirmMsgFieldName(), session));
+                headers.put(getSendMessageHeaderSessionFieldName(), session);
                 ctx.getBridgeEvent().setRawMessage(rawMsg);
+              } else {
+                getLog().debug(() -> String.format("[%s] Header:[%s] not found", ctx.getId(), getSendMessageHeaderConfirmMsgFieldName()));
               }
 
               return ctx;

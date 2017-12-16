@@ -4,6 +4,7 @@ import in.erail.glue.component.ServiceArray;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.vertx.core.Handler;
+import java.util.UUID;
 import org.apache.logging.log4j.Logger;
 
 /**
@@ -58,6 +59,7 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
   }
 
   protected void process(ServiceArray pProcessors, BridgeEvent pEvent) {
+
     if (pProcessors.getServices() == null || pProcessors.getServices().isEmpty()) {
       pEvent.complete(true);
       return;
@@ -66,27 +68,23 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
     BridgeEventContext ctx = new BridgeEventContext();
     ctx.setBridgeEvent(pEvent);
 
+    if (getLog().isDebugEnabled()) {
+      ctx.setId(UUID.randomUUID().toString());
+    }
+
     Observable
             .fromIterable(pProcessors.getServices())
             .reduce(Single.just(ctx), (acc, processor) -> {
-              getLog().trace(() -> String.format("Processor [%s]", processor.getClass().getCanonicalName()));
               BridgeEventProcessor p = (BridgeEventProcessor) processor;
               return p.process(acc);
             })
-            .doOnSuccess((t) -> {
-              getLog().debug(() -> "[NINJA]Reduce Success" + ctx.getAddress());
-            })
             .flatMap((context) -> context)
-            .doOnSuccess((t) -> {
-              getLog().debug(() -> "[NINJA]Flatmap Success" + ctx.getAddress());
-            })
             .doFinally(() -> {
-              getLog().debug(() -> "[NINJA]Finally Called" + ctx.getAddress());
               if (ctx.getBridgeEvent().failed()) {
-                getLog().debug(() -> String.format("BridgeEvent Failed"));
+                getLog().debug(() -> String.format("[%s] BridgeEvent Failed: [%s]", ctx.getId(), ctx.getBridgeEvent().getRawMessage()));
                 return;
               }
-              getLog().trace(() -> String.format("BridgeEvent Success"));
+              getLog().debug(() -> String.format("[%s] BridgeEvent Success [%s]", ctx.getId(), ctx.getBridgeEvent().getRawMessage()));
               ctx.getBridgeEvent().complete(true);
             })
             .subscribe();

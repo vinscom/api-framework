@@ -59,18 +59,22 @@ public class AllowedTopicRegistrationProcessor implements BridgeEventProcessor {
     return pContext
             .map((ctx) -> {
               if (mAddressAllowedToRegister.isEmpty() && mAddressAllowedToRegisterRegex.isEmpty()) {
+                getLog().debug(() -> String.format("[%s] No Access Restriction", ctx.getId() != null ? ctx.getId() : ""));
                 return ctx;
               }
 
               if (Strings.isNullOrEmpty(ctx.getAddress())) {
-                getLog().error("Address can't empty");
+                getLog().error(() -> String.format("[%s] Address can't empty", ctx.getId() != null ? ctx.getId() : ""));
                 return ctx;
               }
 
               if (!(matchAddress(ctx.getAddress()) || matchAddressRegex(ctx.getAddress()))) {
-                getLog().debug(() -> "Registration failed:" + ctx.getAddress());
+                getLog().debug(() -> String.format("[%s] Registration failed:[%s]", ctx.getId(), ctx.getAddress()));
                 ctx.getBridgeEvent().fail("Can't subscribe to topic : " + ctx.getAddress());
+              } else {
+                getLog().debug(() -> String.format("[%s] Registration Allowed:[%s]", ctx.getId(), ctx.getAddress()));
               }
+              
               return ctx;
             });
   }
