@@ -100,14 +100,16 @@ public class SecurityTools {
             })
             .subscribe((key) -> {
               mKeySpec.complete(new SecretKeySpec(key, "AES"));
-              String unique = Base64.getEncoder().encodeToString(Arrays.copyOfRange(key, 0,5));
+              String unique = Base64.getEncoder().encodeToString(Arrays.copyOfRange(key, 0, 5));
               mGlobalUniqueString.complete(unique.replace("=", ""));
+              getLog().info(() -> String.format("GlobalUniqueString:[%s]", unique));
             });
   }
 
   /**
    * Unique string across cluster. Changes on each restart of cluster.
-   * @return 
+   *
+   * @return
    */
   public String getGlobalUniqueString() {
     try {
