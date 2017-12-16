@@ -70,7 +70,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
                         return ctx;
                       })
                       .doOnError((err) -> {
-                        getLog().error(() -> String.format("[%s] Error getting value for Key[%s] from redis: [%s]", ctx.getId(), ctx.getAddressKey(), err.getMessage()));
+                        getLog().error(String.format("[%s] Error getting value for Key[%s] from redis", ctx.getId(), ctx.getAddressKey()),err);
                       });
 
             });
