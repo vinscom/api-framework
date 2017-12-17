@@ -5,7 +5,7 @@ import io.reactivex.Single;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
-import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
+import io.vertx.reactivex.ext.web.handler.sockjs.processor.BridgeEventProcessor;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventUpdate;
 import org.apache.logging.log4j.Logger;
 

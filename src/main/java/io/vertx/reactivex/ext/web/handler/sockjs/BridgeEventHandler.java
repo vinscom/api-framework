@@ -1,5 +1,6 @@
 package io.vertx.reactivex.ext.web.handler.sockjs;
 
+import io.vertx.reactivex.ext.web.handler.sockjs.processor.BridgeEventProcessor;
 import in.erail.glue.component.ServiceArray;
 import io.reactivex.Observable;
 import io.reactivex.Single;
