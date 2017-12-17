@@ -48,7 +48,7 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
                 return ctx;
               }
 
-              JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage().copy();
+              JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
               JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
 
               if (headers != null && headers.containsKey(getSendMessageHeaderConfirmMsgFieldName())) {
@@ -57,7 +57,6 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
                 getLog().debug(() -> String.format("[%s] Header:[%s] found in message", ctx.getId(), getSendMessageHeaderConfirmMsgFieldName()));
                 getLog().debug(() -> String.format("[%s] Setting Header:[%s] to Session:[%s]", ctx.getId(), getSendMessageHeaderConfirmMsgFieldName(), session));
                 headers.put(getSendMessageHeaderSessionFieldName(), session);
-                ctx.getBridgeEvent().setRawMessage(rawMsg);
               } else {
                 getLog().debug(() -> String.format("[%s] Header:[%s] not found", ctx.getId(), getSendMessageHeaderConfirmMsgFieldName()));
               }
