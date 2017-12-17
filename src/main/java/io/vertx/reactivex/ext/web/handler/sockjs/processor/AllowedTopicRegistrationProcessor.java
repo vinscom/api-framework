@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import io.reactivex.Single;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEvent;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
-import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
 import java.util.List;
 import org.apache.logging.log4j.Logger;
 

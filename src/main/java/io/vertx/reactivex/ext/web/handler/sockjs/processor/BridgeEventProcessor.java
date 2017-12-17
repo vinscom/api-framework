@@ -1,6 +1,7 @@
-package io.vertx.reactivex.ext.web.handler.sockjs;
+package io.vertx.reactivex.ext.web.handler.sockjs.processor;
 
 import io.reactivex.Single;
+import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 
 /**
  *

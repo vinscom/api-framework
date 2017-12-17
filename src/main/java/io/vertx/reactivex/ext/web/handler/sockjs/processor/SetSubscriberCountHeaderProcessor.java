@@ -5,7 +5,6 @@ import in.erail.common.FramworkConstants;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
-import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
 import io.vertx.reactivex.redis.RedisClient;
 import org.apache.logging.log4j.Logger;
 

@@ -4,7 +4,6 @@ import com.google.common.base.Strings;
 import io.reactivex.Single;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
-import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventProcessor;
 import io.vertx.reactivex.redis.RedisClient;
 import org.apache.logging.log4j.Logger;
 
