@@ -30,7 +30,7 @@ public class BroadcastServiceTest {
 
     Async async = context.async(2);
 
-    Server server = Glue.instance().<Server>resolve("/in/erail/server/Server");
+    Server server = Glue.instance().resolve("/in/erail/server/Server");
 
     //API Reply
     server.getVertx().eventBus().<JsonObject>consumer("testTopic", (event) -> {

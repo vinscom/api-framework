@@ -28,7 +28,7 @@ public class CORSRouteBuilderTest {
 
     Async async = context.async();
 
-    Server server = Glue.instance().<Server>resolve("/in/erail/server/Server");
+    Server server = Glue.instance().resolve("/in/erail/server/Server");
 
     server
             .getVertx()

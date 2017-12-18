@@ -271,7 +271,7 @@ public class LeaderSelectionService {
             })
             .filter((lc) -> !lc.isError())
             .flatMapSingle((lc) -> {
-              getLog().debug(() -> String.format("[%s] Removed ", debugKey, lc.getAddress()));
+              getLog().debug(() -> String.format("[%s] Removed ", debugKey));
               return getTopicLeaderMap()
                       .get()
                       .rxRemove(lc.getAddress())

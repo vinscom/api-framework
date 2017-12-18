@@ -26,7 +26,7 @@ public class SecurityToolsTest {
   
   @Before
   public void setUp() {
-    securityTools = Glue.instance().<SecurityTools>resolve("/in/erail/security/SecurityTools");
+    securityTools = Glue.instance().resolve("/in/erail/security/SecurityTools");
   }
 
 

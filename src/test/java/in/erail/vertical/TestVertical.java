@@ -10,7 +10,7 @@ import io.vertx.reactivex.core.AbstractVerticle;
 public class TestVertical extends AbstractVerticle {
 
   @Override
-  public void start() throws Exception {
+  public void start() {
     vertx.eventBus().send("vertical.test.java", "success");
   }
   

@@ -29,7 +29,7 @@ public class LeaderSelectionServiceTest {
 
     Async async = context.async(3);
 
-    LeaderSelectionService service = Glue.instance().<LeaderSelectionService>resolve("/in/erail/service/leader/LeaderSelectionService");
+    LeaderSelectionService service = Glue.instance().resolve("/in/erail/service/leader/LeaderSelectionService");
 
     String session = "FAKE_SESSION";
 

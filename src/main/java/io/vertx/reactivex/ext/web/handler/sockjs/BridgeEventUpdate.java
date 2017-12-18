@@ -48,7 +48,7 @@ public class BridgeEventUpdate {
   }
 
   public static BridgeEventUpdate parse(JsonObject pJson) throws IOException {
-    return Json.mapper.<BridgeEventUpdate>readValue(pJson.encode(), BridgeEventUpdate.class);
+    return Json.mapper.readValue(pJson.encode(), BridgeEventUpdate.class);
   }
 
   @Override
