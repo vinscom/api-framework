@@ -20,6 +20,10 @@ public class LoadAddressKeyProcessor implements BridgeEventProcessor {
     return pContext
             .map((ctx) -> {
 
+              if(ctx.getBridgeEvent().failed()){
+                return ctx;
+              }
+              
               if (Strings.isNullOrEmpty(ctx.getAddress())) {
                 getLog().error(() -> String.format("[%s] Address can't empty", ctx.getId() != null ? ctx.getId() : ""));
                 return ctx;

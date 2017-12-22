@@ -19,6 +19,11 @@ public class LoadAddressProcessor implements BridgeEventProcessor {
 
     return pContext
             .map((ctx) -> {
+              
+              if(ctx.getBridgeEvent().failed()){
+                return ctx;
+              }
+              
               JsonObject rawMessage = ctx.getBridgeEvent().getRawMessage();
               if (rawMessage != null) {
                 ctx.setAddress(rawMessage.getString(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_ADDRESS));
