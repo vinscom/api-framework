@@ -57,6 +57,11 @@ public class AllowedTopicRegistrationProcessor implements BridgeEventProcessor {
   public Single<BridgeEventContext> process(Single<BridgeEventContext> pContext) {
     return pContext
             .map((ctx) -> {
+              
+              if(ctx.getBridgeEvent().failed()){
+                return ctx;
+              }
+              
               if (mAddressAllowedToRegister.isEmpty() && mAddressAllowedToRegisterRegex.isEmpty()) {
                 getLog().debug(() -> String.format("[%s] No Access Restriction", ctx.getId() != null ? ctx.getId() : ""));
                 return ctx;

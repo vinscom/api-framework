@@ -45,6 +45,10 @@ public class SubscriberCountProcessor implements BridgeEventProcessor {
     return pContext
             .flatMap((ctx) -> {
 
+              if (ctx.getBridgeEvent().failed()) {
+                return Single.just(ctx);
+              }
+              
               if (Strings.isNullOrEmpty(ctx.getAddress())) {
                 getLog().error(() -> String.format("[%s] Address can't empty", ctx.getId() != null ? ctx.getId() : ""));
                 return Single.just(ctx);
