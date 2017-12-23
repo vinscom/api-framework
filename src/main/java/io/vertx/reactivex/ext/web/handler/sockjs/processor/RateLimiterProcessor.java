@@ -63,7 +63,7 @@ public class RateLimiterProcessor implements BridgeEventProcessor {
               });
 
               if (!bucket.tryConsume(1)) {
-                getLog().debug(() -> String.format("[%s] Rate limit crossed for event:[%s]", ctx.getId(), eventType.toString()));
+                getLog().debug(() -> String.format("[%s] Rate limit crossed for connection:[%s],event:[%s]", ctx.getId(), ctx.getBridgeEvent().socket().writeHandlerID(), eventType.toString()));
                 ctx.getBridgeEvent().fail("Rate Limit Crossed");
               }
 
