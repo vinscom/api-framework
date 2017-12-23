@@ -11,7 +11,7 @@ import io.reactivex.Single;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 import java.time.Duration;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.logging.log4j.Logger;
@@ -22,13 +22,16 @@ import org.apache.logging.log4j.Logger;
  */
 public class RateLimiterProcessor implements BridgeEventProcessor {
 
-  private Map<BridgeEventType, Cache<String, Bucket>> mCache = new HashMap<>(9);
+  private final Map<BridgeEventType, Cache<String, Bucket>> mCache = new EnumMap(BridgeEventType.class);
+  private final Map<BridgeEventType, Integer> mTokenBucketSize = new EnumMap(BridgeEventType.class);
+  private final Map<BridgeEventType, Integer> mRateOfTokenFill = new EnumMap(BridgeEventType.class);
+  private final Map<BridgeEventType, Integer> mRateOfTokenFillDuration = new EnumMap(BridgeEventType.class);
+  private int mDefaultTokenBucketSize = 120;
+  private int mDefaultRateOfTokenFill = 1;
+  private int mDefaultRateOfTokenFillDuration = 1;
   private int mMaximumSize = 50000;
   private int mExpireAfterAccess = 3600;
   private boolean mEnable = true;
-  private int mTokenBucketSize = 120;
-  private int mRateOfTokenFill = 1;
-  private int mRateOfTokenFillDuration = 1;
   private Logger mLog;
 
   @StartService
@@ -57,8 +60,9 @@ public class RateLimiterProcessor implements BridgeEventProcessor {
               BridgeEventType eventType = ctx.getBridgeEvent().type();
 
               Bucket bucket = getCache().get(eventType).get(ctx.getBridgeEvent().socket().writeHandlerID(), () -> {
-                Refill refill = Refill.smooth(getRateOfTokenFill(), Duration.ofSeconds(getRateOfTokenFillDuration()));
-                Bandwidth limit = Bandwidth.classic(getTokenBucketSize(), refill);
+                Refill refill = Refill.smooth(getRateOfTokenFill().getOrDefault(eventType, getDefaultRateOfTokenFill()),
+                         Duration.ofSeconds(getRateOfTokenFillDuration().getOrDefault(eventType, getDefaultRateOfTokenFillDuration())));
+                Bandwidth limit = Bandwidth.classic(getTokenBucketSize().getOrDefault(eventType, getDefaultTokenBucketSize()), refill);
                 return Bucket4j.builder().addLimit(limit).build();
               });
 
@@ -108,32 +112,73 @@ public class RateLimiterProcessor implements BridgeEventProcessor {
     return mCache;
   }
 
-  public void setCache(Map<BridgeEventType, Cache<String, Bucket>> pCache) {
-    this.mCache = pCache;
-  }
-
-  public int getTokenBucketSize() {
+  public Map<BridgeEventType, Integer> getTokenBucketSize() {
     return mTokenBucketSize;
   }
 
-  public void setTokenBucketSize(int pTokenBucketSize) {
-    this.mTokenBucketSize = pTokenBucketSize;
-  }
-
-  public int getRateOfTokenFill() {
+  public Map<BridgeEventType, Integer> getRateOfTokenFill() {
     return mRateOfTokenFill;
   }
 
-  public void setRateOfTokenFill(int pRateOfTokenFill) {
-    this.mRateOfTokenFill = pRateOfTokenFill;
-  }
-
-  public int getRateOfTokenFillDuration() {
+  public Map<BridgeEventType, Integer> getRateOfTokenFillDuration() {
     return mRateOfTokenFillDuration;
   }
 
-  public void setRateOfTokenFillDuration(int pRateOfTokenFillDuration) {
-    this.mRateOfTokenFillDuration = pRateOfTokenFillDuration;
+  public void setTokenBucketSize(Map<String, String> pTokenBucketSize) {
+    for (BridgeEventType type : BridgeEventType.values()) {
+      if (pTokenBucketSize.containsKey(type.toString())) {
+        String value = pTokenBucketSize.get(type.toString());
+        mTokenBucketSize.put(type, Integer.parseInt(value));
+      } else {
+        mTokenBucketSize.put(type, getDefaultTokenBucketSize());
+      }
+    }
+  }
+
+  public void setRateOfTokenFill(Map<String, String> pRateOfTokenFill) {
+    for (BridgeEventType type : BridgeEventType.values()) {
+      if (pRateOfTokenFill.containsKey(type.toString())) {
+        String value = pRateOfTokenFill.get(type.toString());
+        mRateOfTokenFill.put(type, Integer.parseInt(value));
+      } else {
+        mRateOfTokenFill.put(type, getDefaultRateOfTokenFill());
+      }
+    }
+  }
+
+  public void setRateOfTokenFillDuration(Map<String, String> pRateOfTokenFillDuration) {
+    for (BridgeEventType type : BridgeEventType.values()) {
+      if (pRateOfTokenFillDuration.containsKey(type.toString())) {
+        String value = pRateOfTokenFillDuration.get(type.toString());
+        mRateOfTokenFillDuration.put(type, Integer.parseInt(value));
+      } else {
+        mRateOfTokenFillDuration.put(type, getDefaultRateOfTokenFillDuration());
+      }
+    }
+  }
+
+  public int getDefaultTokenBucketSize() {
+    return mDefaultTokenBucketSize;
+  }
+
+  public void setDefaultTokenBucketSize(int pDefaultTokenBucketSize) {
+    this.mDefaultTokenBucketSize = pDefaultTokenBucketSize;
+  }
+
+  public int getDefaultRateOfTokenFill() {
+    return mDefaultRateOfTokenFill;
+  }
+
+  public void setDefaultRateOfTokenFill(int pDefaultRateOfTokenFill) {
+    this.mDefaultRateOfTokenFill = pDefaultRateOfTokenFill;
+  }
+
+  public int getDefaultRateOfTokenFillDuration() {
+    return mDefaultRateOfTokenFillDuration;
+  }
+
+  public void setDefaultRateOfTokenFillDuration(int pDefaultRateOfTokenFillDuration) {
+    this.mDefaultRateOfTokenFillDuration = pDefaultRateOfTokenFillDuration;
   }
 
 }
