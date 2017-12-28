@@ -10,7 +10,7 @@ import in.erail.glue.annotation.StartService;
  *
  * @author vinay
  */
-public abstract class ServiceImpl implements Service {
+public abstract class RESTServiceImpl implements RESTService {
 
   private String mOperationId;
   private String mServiceUniqueId;

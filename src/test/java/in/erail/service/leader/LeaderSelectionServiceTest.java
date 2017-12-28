@@ -10,9 +10,11 @@ import io.vertx.ext.unit.junit.Timeout;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Rule;
 import in.erail.glue.Glue;
+import io.reactivex.Single;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.reactivex.core.eventbus.EventBus;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -50,7 +52,7 @@ public class LeaderSelectionServiceTest {
             .toObservable()
             .firstOrError()
             .subscribe((msg) -> {
-              String leaderId = msg.body().getString("leader");              
+              String leaderId = msg.body().getString("leader");
               //This will be done by BridgeEventHandler
               DeliveryOptions delOpt = new DeliveryOptions();
               delOpt.addHeader("session", "FAKE_LEADER_SOCKET");
@@ -77,8 +79,10 @@ public class LeaderSelectionServiceTest {
 
                                               service.getVertx().setTimer(100, (p2) -> {
                                                 m.rxGet("ninja-live").subscribe((v2) -> {
-                                                  context.assertNull(v2);
-                                                  async.countDown();
+                                                  if (v2 == null || LeaderSelectionService.DEFAULT_LEADER_STATUS.equals(v2)) {
+                                                    async.countDown();
+                                                  }
+                                                  context.fail("Wrong map value");
                                                 });
                                               });
                                             });
@@ -87,7 +91,9 @@ public class LeaderSelectionServiceTest {
                       });
             });
 
-    service.getVertx().eventBus().send(service.getBridgeEventUpdateTopicName(), regsiterMsg);
+    Single.timer(100, TimeUnit.MILLISECONDS).subscribe((t) -> {
+      service.getVertx().eventBus().send(service.getBridgeEventUpdateTopicName(), regsiterMsg);
+    });
 
   }
 
