@@ -4,7 +4,9 @@ import com.google.common.base.Strings;
 import in.erail.service.SingletonServiceImpl;
 import io.reactivex.Completable;
 import io.reactivex.Single;
+import io.reactivex.exceptions.Exceptions;
 import io.reactivex.flowables.ConnectableFlowable;
+import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.BridgeEventType;
@@ -32,6 +34,7 @@ import java.util.regex.Pattern;
  */
 public class LeaderSelectionService extends SingletonServiceImpl {
 
+  public static final String DEFAULT_LEADER_STATUS = "IN_PROGRESS";
   private String mBridgeEventUpdateTopicName;
   private String mLeaderMapName;
   private CompletableFuture<AsyncMap<String, String>> mTopicLeaderMap;
@@ -71,14 +74,15 @@ public class LeaderSelectionService extends SingletonServiceImpl {
                       .map(msg -> {
                         String leaderSession = msg.headers().get(getSendMessageHeaderSessionFieldName());
                         if (Strings.isNullOrEmpty(leaderSession)) {
-                          throw new RuntimeException("Header missing session");
+                          throw new RuntimeException(String.format("[%s] Header missing session", pDebugKey));
                         }
                         lc.setReplayAddress(msg.replyAddress());
                         lc.setLeaderSessionId(msg.headers().get(getSendMessageHeaderSessionFieldName()));
+                        getLog().debug(() -> String.format("[%s] Setting setLeaderSessionId:[%s]", pDebugKey, lc.getLeaderSessionId()));
                         return lc;
                       })
                       .doOnSuccess((ctx) -> {
-                        getLog().debug(() -> String.format("[%s] Got successful confirmation on Confirmation Address:[%s]. Sending final reply to client", pDebugKey,lc.getConfirmationAddress()));
+                        getLog().debug(() -> String.format("[%s] Got successful confirmation on Confirmation Address:[%s]. Sending final reply to client", pDebugKey, lc.getConfirmationAddress()));
                         getVertx().eventBus().send(ctx.getReplayAddress(), new JsonObject());
                       });
             })
@@ -101,28 +105,32 @@ public class LeaderSelectionService extends SingletonServiceImpl {
     }
 
     topicMap
-            .rxPutIfAbsent(lctx.getAddress(), "IN_PROGRESS", getClusterMapKeyTimout())
+            .rxPutIfAbsent(lctx.getAddress(), DEFAULT_LEADER_STATUS, getClusterMapKeyTimout())
             .filter((key) -> key == null)
-            .map((t) -> lctx.setConfirmationAddress(UUID.randomUUID().toString()))
-            .flatMapSingle(lc -> tryLeaderSelection(lc, debugKey))
-            .flatMap((lc) -> topicMap.rxReplaceIfPresent(lc.getAddress(), "IN_PROGRESS", lc.getLeaderSessionId()))
-            .doOnSuccess((success) -> {
-              if (!success) {
-                getLog().error("Value has been updated");
-              }
-            })
-            .onErrorReturn((err) -> {
-              getLog().error(err);
-              topicMap
-                      .rxRemoveIfPresent(lctx.getAddress(), "IN_PROGRESS")
-                      .subscribe((success) -> {
+            .subscribe((key) -> {
+              Single
+                      .just(lctx)
+                      .map((lc) -> lc.setConfirmationAddress(UUID.randomUUID().toString()))
+                      .flatMap(lc -> tryLeaderSelection(lc, debugKey))
+                      .flatMap((lc) -> topicMap.rxReplaceIfPresent(lc.getAddress(), DEFAULT_LEADER_STATUS, lc.getLeaderSessionId()))
+                      .doOnSuccess((success) -> {
                         if (!success) {
-                          getLog().error("Cant remove value has been updated");
+                          getLog().error(String.format("[%s] Value for Address:[%s] has been updated", debugKey, lctx.getAddress()));
                         }
-                      });
-              return false;
-            })
-            .subscribe();
+                      })
+                      .onErrorReturn((err) -> {
+                        getLog().error(err);
+                        topicMap
+                                .rxRemoveIfPresent(lctx.getAddress(), DEFAULT_LEADER_STATUS)
+                                .subscribe((success) -> {
+                                  if (!success) {
+                                    getLog().error(String.format("[%s] Can't remove Key:[%s], value has been updated", debugKey, lctx.getAddress()));
+                                  }
+                                });
+                        return false;
+                      })
+                      .subscribe();
+            });
   }
 
   protected void topicUnregister(BridgeEventUpdate pEvent) {
@@ -139,7 +147,19 @@ public class LeaderSelectionService extends SingletonServiceImpl {
 
     topicMap
             .rxRemoveIfPresent(pEvent.getAddress(), pEvent.getSession())
-            .subscribe();
+            .subscribe((success) -> {
+
+              if (!success) {
+                getLog().warn(() -> String.format("[%s] Not able to remove:[%s] from clustermap. Value has changed", debugKey, pEvent.getAddress()));
+              }
+
+              //Trigger selection of new leader
+              BridgeEventUpdate beu = new BridgeEventUpdate();
+              beu.setAddress(pEvent.getAddress());
+              beu.setType(BridgeEventType.REGISTER);
+              beu.setSession(UUID.randomUUID().toString());
+              getVertx().eventBus().send(getBridgeEventUpdateTopicName(), beu.toJson());
+            });
 
   }
 
@@ -267,7 +287,7 @@ public class LeaderSelectionService extends SingletonServiceImpl {
 
     events.connect();
 
-    return Completable.timer(100, TimeUnit.MILLISECONDS);
+    return Completable.complete();
   }
 
 }
