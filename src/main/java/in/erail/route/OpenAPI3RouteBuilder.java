@@ -7,7 +7,6 @@ import java.util.stream.Collectors;
 
 import in.erail.common.FramworkConstants;
 import in.erail.glue.component.ServiceArray;
-import in.erail.service.Service;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -18,6 +17,7 @@ import io.vertx.reactivex.core.http.HttpServerResponse;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
+import in.erail.service.RESTService;
 
 /**
  *
@@ -144,7 +144,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     getServices()
             .getServices()
             .forEach((api) -> {
-              Service service = (Service) api;
+              RESTService service = (RESTService) api;
               apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
                 if (isSecurityEnable()) {
                   routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getServiceUniqueId(), (event) -> {

@@ -1,47 +1,40 @@
 package in.erail.service.leader;
 
 import com.google.common.base.Strings;
-import in.erail.glue.annotation.StartService;
+import in.erail.service.SingletonServiceImpl;
+import io.reactivex.Completable;
 import io.reactivex.Single;
 import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.BridgeEventType;
-import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.eventbus.Message;
 import io.vertx.reactivex.core.shareddata.AsyncMap;
-import io.vertx.reactivex.core.shareddata.Lock;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventUpdate;
 import java.io.IOException;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
-import org.apache.logging.log4j.Logger;
 
 /**
  * <ul>
  * <li>
- * If there are N number of subscribers for Topic A. Then only
- * one subscriber(Leader) out of N subscriber should be able to use send 
- * message feature to send message to N subscriber of Topic A. 
+ * If there are N number of subscribers for Topic A. Then only one subscriber(Leader) out of N subscriber should be able to use send message feature to send message to N subscriber of Topic A.
  * </li>
  * <li>
- * One subscriber can hold leadership for limited time only. After that
- * leadership must be transfered to another subscriber.
+ * One subscriber can hold leadership for limited time only. After that leadership must be transfered to another subscriber.
  * </li>
  * </ul>
+ *
  * @author vinay
  */
-public class LeaderSelectionService {
+public class LeaderSelectionService extends SingletonServiceImpl {
 
-  private Vertx mVertx;
-  private Logger mLog;
   private String mBridgeEventUpdateTopicName;
   private String mLeaderMapName;
   private CompletableFuture<AsyncMap<String, String>> mTopicLeaderMap;
-  private boolean mEnable = false;
-  private long mLockAquireTimeout = 1000;
   private long mNumberOfTryToSelectLeader = 3;
   private String mConfirmationMessageTopicFieldName = "leader";
   private long mLeaderConfirmationTimeout = 5000;
@@ -49,44 +42,47 @@ public class LeaderSelectionService {
   private long mClusterMapKeyTimout = 8 * 60 * 1000;
   private String mSendMessageHeaderSessionFieldName = "session";
 
-  @StartService
-  public void start() {
+  public Single<LeaderContext> tryLeaderSelection(LeaderContext pCtx, String pDebugKey) {
 
-    if (isEnable()) {
-
-      getLog().debug(() -> "Starting LeaderSelectionService");
-
-      mTopicLeaderMap = new CompletableFuture<>();
-
-      getVertx()
-              .sharedData()
-              .<String, String>rxGetClusterWideMap(getLeaderMapName())
-              .subscribeOn(Schedulers.computation()) //CompleteableFuture is blocking
-              .subscribe((m) -> {
-                getTopicLeaderMap().complete(m);
-                getLog().debug(() -> "Cluster Map reference aquired");
-              });
-
-      ConnectableFlowable<BridgeEventUpdate> events = getVertx()
-              .eventBus()
-              .<JsonObject>consumer(getBridgeEventUpdateTopicName())
-              .toFlowable()
-              .map(this::parse)
-              .filter((e) -> e != null)
-              .filter((e) -> getAllowedAddressForLeaderRegex().matcher(e.getAddress()).find())
-              .publish();
-
-      events
-              .filter(e -> BridgeEventType.REGISTER.equals(e.getType()))
-              .subscribe(this::topicRegister);
-
-      events
-              .filter(e -> BridgeEventType.UNREGISTER.equals(e.getType()))
-              .subscribe(this::topicUnregister);
-
-      events.connect();
-    }
-
+    return Single
+            .<LeaderContext>create((e) -> {
+              if (!e.isDisposed()) {
+                /**
+                 * On each try, we want to listen on new topic. This to avoid getting confirmation from old leader Leader ID = Session + # + Salt
+                 */
+                pCtx.setConfirmationAddress(UUID.randomUUID().toString());
+                e.onSuccess(pCtx);
+              }
+            })
+            .flatMap((lc) -> {
+              getLog().debug(() -> String.format("[%s] Sending confirmation message on [%s], expecting reply on [%s]", pDebugKey, lc.getAddress(), lc.getConfirmationAddress()));
+              /**
+               * {
+               * "leader" : "Leader ID" }
+               */
+              JsonObject confirmationMsg = new JsonObject().put(getConfirmationMessageTopicFieldName(), lc.getConfirmationAddress());
+              getVertx().eventBus().send(lc.getAddress(), confirmationMsg);
+              return getVertx()
+                      .eventBus()
+                      .<JsonObject>consumer(lc.getConfirmationAddress())
+                      .toObservable()
+                      .firstOrError()
+                      .timeout(getLeaderConfirmationTimeout(), TimeUnit.MILLISECONDS)
+                      .map(msg -> {
+                        String leaderSession = msg.headers().get(getSendMessageHeaderSessionFieldName());
+                        if (Strings.isNullOrEmpty(leaderSession)) {
+                          throw new RuntimeException("Header missing session");
+                        }
+                        lc.setReplayAddress(msg.replyAddress());
+                        lc.setLeaderSessionId(msg.headers().get(getSendMessageHeaderSessionFieldName()));
+                        return lc;
+                      })
+                      .doOnSuccess((ctx) -> {
+                        getLog().debug(() -> String.format("[%s] Got successful confirmation on Confirmation Address:[%s]. Sending final reply to client", pDebugKey,lc.getConfirmationAddress()));
+                        getVertx().eventBus().send(ctx.getReplayAddress(), new JsonObject());
+                      });
+            })
+            .retry(getNumberOfTryToSelectLeader());
   }
 
   protected void topicRegister(BridgeEventUpdate pEvent) {
@@ -98,121 +94,35 @@ public class LeaderSelectionService {
     LeaderContext lctx = new LeaderContext();
     lctx.setAddress(pEvent.getAddress());
 
-    Single
-            .just(lctx)
-            .flatMap((lc) -> {  //Check if topic has leader
-              return getTopicLeaderMap()
-                      .get()
-                      .rxGet(lc.getAddress())
-                      .map((v) -> {
-                        if (!Strings.isNullOrEmpty(v)) {
-                          getLog().debug(() -> String.format("[%s] Leader:[%s] found for [%s]", debugKey, v, lc.getAddress()));
-                          lc.setError(true);
-                        } else {
-                          getLog().debug(() -> String.format("[%s] No leader set for [%s]", debugKey, lc.getAddress()));
-                        }
-                        return lc;
-                      });
-            })
-            .filter((lc) -> !lc.isError())
-            .flatMapSingle((lc) -> { //No leader found, acquire lock on address name
-              return getVertx()
-                      .sharedData()
-                      .rxGetLockWithTimeout(lc.getAddress(), getLockAquireTimeout())
-                      .map((l) -> {
-                        getLog().debug(() -> String.format("[%s] Lock aquired on [%s]", debugKey, lc.getAddress()));
-                        return lc.setLock(l);
-                      })
-                      .onErrorReturn((err) -> {
-                        getLog().debug(() -> String.format("[%s] Could not aquire lock on [%s][%s]", debugKey, lc.getAddress(), err.toString()));
-                        lc.setError(true);
-                        return lc;
-                      });
-            })
-            .filter((lc) -> !lc.isError())
-            .flatMapSingle((lc) -> {  //Check again if leader is selected by the time we aquired lock
-              return getTopicLeaderMap()
-                      .get()
-                      .rxGet(lc.getAddress())
-                      .map((v) -> {
-                        if (!Strings.isNullOrEmpty(v)) {
-                          getLog().debug(() -> String.format("[%s] Found Leader[%s] after aquring lock on [%s]", debugKey, v, lc.getAddress()));
-                          lc.setError(true);
-                        }
-                        return lc;
-                      });
-            })
-            .filter((lc) -> !lc.isError())
-            .flatMapSingle((lc) -> {  // Select leader by sending unique id and wait for confirmation.
+    AsyncMap<String, String> topicMap = getTopicLeaderMap();
 
-              return Single
-                      .<String>create((e) -> {
-                        if (!e.isDisposed()) {
-                          /**
-                           * On each try, we want to listen on new topic. This to avoid getting confirmation from old leader Leader ID = Session + # + Salt
-                           */
-                          e.onSuccess(UUID.randomUUID().toString());
-                        }
-                      })
-                      .flatMap((confirmationTopic) -> {
-                        getLog().debug(() -> String.format("[%s] Sending confirmation message on [%s], expecting reply on [%s]", debugKey, lc.getAddress(), confirmationTopic));
-                        /**
-                         * {
-                         * "leader" : "Leader ID" }
-                         */
-                        JsonObject confirmationMsg = new JsonObject().put(getConfirmationMessageTopicFieldName(), confirmationTopic);
-                        getVertx().eventBus().send(lc.getAddress(), confirmationMsg);
-                        return getVertx()
-                                .eventBus()
-                                .<JsonObject>consumer(confirmationTopic)
-                                .toObservable()
-                                .firstOrError()
-                                .timeout(getLeaderConfirmationTimeout(), TimeUnit.MILLISECONDS)
-                                .doOnSuccess((msg) -> {
-                                  String leaderSession = msg.headers().get(getSendMessageHeaderSessionFieldName());
-                                  if (Strings.isNullOrEmpty(leaderSession)) {
-                                    lc.setError(true);
-                                    getLog().debug(() -> String.format("[%s] Abort: Got null session id for [%s] on [%s]", debugKey, lc.getAddress(), leaderSession));
-                                  } else {
-                                    getLog().debug(() -> String.format("[%s] Got confirmation for [%s] on [%s]", debugKey, lc.getAddress(), leaderSession));
-                                  }
-                                  lc.setLeaderId(leaderSession); //Socket id of socket connected to leader
-                                  msg.reply(new JsonObject());  //Send confirmation to client. Only after this confirmation, client becomes leader
-                                });
-                      })
-                      .retry(getNumberOfTryToSelectLeader())
-                      .doOnError((err) -> {
-                        getLog().debug(() -> String.format("[%s] Error in sending message. Tried [%d] times", debugKey, getNumberOfTryToSelectLeader()));
-                        lc.setError(true);
-                      })
-                      .onErrorReturn((err) -> {
-                        getLog().debug(() -> String.format("[%s] No confirmation recieved", debugKey));
-                        return null;
-                      })
-                      .map((msg) -> {
-                        return lc;
-                      });
-            })
-            .filter((lc) -> !lc.isError())
-            .flatMapCompletable((lc) -> { //Store leader in session and map
-              getLog().debug(() -> String.format("[%s] Updated Cluster Map Key:[%s],Value:[%s]", debugKey, lc.getAddress(), lc.getLeaderId()));
-              return getTopicLeaderMap()
-                      .get()
-                      .rxPut(lc.getAddress(), lc.getLeaderId(), getClusterMapKeyTimout());
-            })
-            .doFinally(() -> {
-              if (lctx.getLock() != null) {
-                lctx.getLock().release();
-                getLog().debug(() -> String.format("[%s] Releasing lock on [%s]", debugKey, lctx.getLock().toString()));
-              } else {
-                getLog().debug(() -> String.format("[%s] No lock aquired, so, nothing to release", debugKey));
+    if (topicMap == null) {
+      return;
+    }
+
+    topicMap
+            .rxPutIfAbsent(lctx.getAddress(), "IN_PROGRESS", getClusterMapKeyTimout())
+            .filter((key) -> key == null)
+            .map((t) -> lctx.setConfirmationAddress(UUID.randomUUID().toString()))
+            .flatMapSingle(lc -> tryLeaderSelection(lc, debugKey))
+            .flatMap((lc) -> topicMap.rxReplaceIfPresent(lc.getAddress(), "IN_PROGRESS", lc.getLeaderSessionId()))
+            .doOnSuccess((success) -> {
+              if (!success) {
+                getLog().error("Value has been updated");
               }
             })
-            .onErrorComplete()
-            .subscribe(() -> {
-              getLog().debug(() -> String.format("[%s] Finished Processing [%s]", debugKey, pEvent.toString()));
-            });
-
+            .onErrorReturn((err) -> {
+              getLog().error(err);
+              topicMap
+                      .rxRemoveIfPresent(lctx.getAddress(), "IN_PROGRESS")
+                      .subscribe((success) -> {
+                        if (!success) {
+                          getLog().error("Cant remove value has been updated");
+                        }
+                      });
+              return false;
+            })
+            .subscribe();
   }
 
   protected void topicUnregister(BridgeEventUpdate pEvent) {
@@ -221,83 +131,15 @@ public class LeaderSelectionService {
 
     getLog().debug(() -> String.format("[%s] Processing %s", debugKey, pEvent.toString()));
 
-    LeaderContext lctx = new LeaderContext();
-    lctx.setAddress(pEvent.getAddress());
-    lctx.setLeaderId(pEvent.getSession());
+    AsyncMap<String, String> topicMap = getTopicLeaderMap();
 
-    Single
-            .just(lctx)
-            .flatMap((lc) -> {
-              return getTopicLeaderMap()
-                      .get()
-                      .rxGet(lc.getAddress())
-                      .map((v) -> {
-                        if (!lc.getLeaderId().equals(v)) {
-                          getLog().debug(() -> String.format("[%s] [%s] is not a leader. Stop Processing", debugKey, lc.getLeaderId()));
-                          lc.setError(true);
-                        } else {
-                          getLog().debug(() -> String.format("[%s] [%s] is a leader", debugKey, lc.getLeaderId()));
-                        }
-                        return lc;
-                      });
-            })
-            .filter((lc) -> !lc.isError())
-            .flatMapSingle((lc) -> {
-              return getVertx()
-                      .sharedData()
-                      .rxGetLockWithTimeout(lc.getAddress(), 1000)
-                      .map((l) -> {
-                        getLog().debug(() -> String.format("[%s] Lock aquired on [%s]", debugKey, lc.getAddress()));
-                        return lc.setLock(l);
-                      })
-                      .onErrorReturn((err) -> {
-                        getLog().debug(() -> String.format("[%s] Could not aquire lock on [%s][%s]", debugKey, lc.getAddress(), err.toString()));
-                        lc.setError(true);
-                        return lc;
-                      });
-            })
-            .filter((lc) -> !lc.isError())
-            .flatMapSingle((lc) -> {
-              return getTopicLeaderMap()
-                      .get()
-                      .rxGet(lc.getAddress())
-                      .map((v) -> {
-                        if (!lc.getLeaderId().equals(v)) {
-                          getLog().debug(() -> String.format("[%s] Found different Leader[%s] after aquring lock on [%s]", debugKey, v, lc.getAddress()));
-                          lc.setError(true);
-                        }
-                        return lc;
-                      });
-            })
-            .filter((lc) -> !lc.isError())
-            .flatMapSingle((lc) -> {
-              getLog().debug(() -> String.format("[%s] Removed ", debugKey));
-              return getTopicLeaderMap()
-                      .get()
-                      .rxRemove(lc.getAddress())
-                      .map((v) -> lc);
-            })
-            .doOnSuccess((lc) -> {
-              //Trigger selection of new leader
-              BridgeEventUpdate beu = new BridgeEventUpdate();
-              beu.setAddress(lc.getAddress());
-              beu.setType(BridgeEventType.REGISTER);
-              beu.setSession(UUID.randomUUID().toString());
-              getVertx().eventBus().send(getBridgeEventUpdateTopicName(), beu.toJson());
-            })
-            .toCompletable()
-            .onErrorComplete()
-            .doFinally(() -> {
-              if (lctx.getLock() != null) {
-                lctx.getLock().release();
-                getLog().debug(() -> String.format("[%s] Releasing lock on [%s]", debugKey, lctx.getLock().toString()));
-              } else {
-                getLog().debug(() -> String.format("[%s] No lock aquired, so, nothing to release", debugKey));
-              }
-            })
-            .subscribe(() -> {
-              getLog().debug(() -> String.format("[%s] Finished Processing [%s]", debugKey, pEvent.toString()));
-            });
+    if (topicMap == null) {
+      return;
+    }
+
+    topicMap
+            .rxRemoveIfPresent(pEvent.getAddress(), pEvent.getSession())
+            .subscribe();
 
   }
 
@@ -330,44 +172,17 @@ public class LeaderSelectionService {
     this.mLeaderMapName = pLeaderMapName;
   }
 
-  public CompletableFuture<AsyncMap<String, String>> getTopicLeaderMap() {
-    return mTopicLeaderMap;
+  public AsyncMap<String, String> getTopicLeaderMap() {
+    try {
+      return mTopicLeaderMap.get();
+    } catch (InterruptedException | ExecutionException ex) {
+      getLog().error(ex);
+    }
+    return null;
   }
 
   public void setTopicLeaderMap(CompletableFuture<AsyncMap<String, String>> pTopicLeaderMap) {
     this.mTopicLeaderMap = pTopicLeaderMap;
-  }
-
-  public Vertx getVertx() {
-    return mVertx;
-  }
-
-  public void setVertx(Vertx pVertx) {
-    this.mVertx = pVertx;
-  }
-
-  public Logger getLog() {
-    return mLog;
-  }
-
-  public void setLog(Logger pLog) {
-    this.mLog = pLog;
-  }
-
-  public boolean isEnable() {
-    return mEnable;
-  }
-
-  public void setEnable(boolean pEnable) {
-    this.mEnable = pEnable;
-  }
-
-  public long getLockAquireTimeout() {
-    return mLockAquireTimeout;
-  }
-
-  public void setLockAquireTimeout(long pLockAquireTimeout) {
-    this.mLockAquireTimeout = pLockAquireTimeout;
   }
 
   public long getNumberOfTryToSelectLeader() {
@@ -418,48 +233,41 @@ public class LeaderSelectionService {
     this.mSendMessageHeaderSessionFieldName = pSendMessageHeaderSessionFieldName;
   }
 
-}
+  @Override
+  public Completable startService() {
 
-class LeaderContext {
+    CompletableFuture<Boolean> serviceStarted = new CompletableFuture<>();
+    mTopicLeaderMap = new CompletableFuture<>();
 
-  private Lock mLock;
-  private String mAddress;
-  private String mLeaderId;
-  private boolean mError = false;
+    getVertx()
+            .sharedData()
+            .<String, String>rxGetClusterWideMap(getLeaderMapName())
+            .subscribeOn(Schedulers.computation()) //CompleteableFuture is blocking
+            .subscribe((m) -> {
+              mTopicLeaderMap.complete(m);
+              getLog().debug(() -> "Cluster Map reference aquired");
+            });
 
-  public Lock getLock() {
-    return mLock;
-  }
+    ConnectableFlowable<BridgeEventUpdate> events = getVertx()
+            .eventBus()
+            .<JsonObject>consumer(getBridgeEventUpdateTopicName())
+            .toFlowable()
+            .map(this::parse)
+            .filter((e) -> e != null)
+            .filter((e) -> getAllowedAddressForLeaderRegex().matcher(e.getAddress()).find())
+            .publish();
 
-  public LeaderContext setLock(Lock pLock) {
-    this.mLock = pLock;
-    return this;
-  }
+    events
+            .filter(e -> BridgeEventType.REGISTER.equals(e.getType()))
+            .subscribe(this::topicRegister);
 
-  public String getAddress() {
-    return mAddress;
-  }
+    events
+            .filter(e -> BridgeEventType.UNREGISTER.equals(e.getType()))
+            .subscribe(this::topicUnregister);
 
-  public LeaderContext setAddress(String pAddress) {
-    this.mAddress = pAddress;
-    return this;
-  }
+    events.connect();
 
-  public String getLeaderId() {
-    return mLeaderId;
-  }
-
-  public LeaderContext setLeaderId(String pLeaderId) {
-    this.mLeaderId = pLeaderId;
-    return this;
-  }
-
-  public boolean isError() {
-    return mError;
-  }
-
-  public void setError(boolean pError) {
-    this.mError = pError;
+    return Completable.timer(100, TimeUnit.MILLISECONDS);
   }
 
 }

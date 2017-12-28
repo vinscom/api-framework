@@ -10,7 +10,7 @@ import io.vertx.reactivex.core.eventbus.Message;
  *
  * @author vinay
  */
-public class BroadcastService extends ServiceImpl{
+public class BroadcastService extends RESTServiceImpl{
 
   @Override
   public void process(Message<JsonObject> pMessage) {
