@@ -4,9 +4,7 @@ import com.google.common.base.Strings;
 import in.erail.service.SingletonServiceImpl;
 import io.reactivex.Completable;
 import io.reactivex.Single;
-import io.reactivex.exceptions.Exceptions;
 import io.reactivex.flowables.ConnectableFlowable;
-import io.reactivex.plugins.RxJavaPlugins;
 import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.BridgeEventType;
@@ -110,7 +108,6 @@ public class LeaderSelectionService extends SingletonServiceImpl {
             .subscribe((key) -> {
               Single
                       .just(lctx)
-                      .map((lc) -> lc.setConfirmationAddress(UUID.randomUUID().toString()))
                       .flatMap(lc -> tryLeaderSelection(lc, debugKey))
                       .flatMap((lc) -> topicMap.rxReplaceIfPresent(lc.getAddress(), DEFAULT_LEADER_STATUS, lc.getLeaderSessionId()))
                       .doOnSuccess((success) -> {
