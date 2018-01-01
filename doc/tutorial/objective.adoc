@@ -1,0 +1,5 @@
+== Objective
+. Create Site Hello World
+. Site will have chat box using which you can chat with site.
+. Create chat API
+. User will have to login using Google before using site
