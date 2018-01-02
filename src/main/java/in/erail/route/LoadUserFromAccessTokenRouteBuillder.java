@@ -17,7 +17,7 @@ import io.vertx.reactivex.ext.web.RoutingContext;
 public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderImpl {
 
   private OAuth2Auth mOAuth2Auth;
-
+  
   public OAuth2Auth getOAuth2Auth() {
     return mOAuth2Auth;
   }
@@ -34,6 +34,7 @@ public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderI
   }
 
   public void handle(RoutingContext pRoutingContext) {
+    
     if (pRoutingContext.user() == null) {
       String access_token = pRoutingContext.request().getHeader(HttpHeaders.AUTHORIZATION);
       if (!Strings.isNullOrEmpty(access_token)) {
@@ -51,4 +52,5 @@ public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderI
     }
     pRoutingContext.next();
   }
+
 }
