@@ -18,10 +18,13 @@ public class KeycloakOAuth2Instance {
   private OAuth2FlowType mOAuth2FlowType;
   private JsonObject mConfig;
   private Logger mLog;
-  
+  private boolean mEnable;
+
   @StartService
   public void start() {
-    setOAuth2Auth(KeycloakAuth.create(getVertx(), getOAuth2FlowType(), getConfig()));
+    if (isEnable()) {
+      setOAuth2Auth(KeycloakAuth.create(getVertx(), getOAuth2FlowType(), getConfig()));
+    }
   }
 
   public Vertx getVertx() {
@@ -62,6 +65,14 @@ public class KeycloakOAuth2Instance {
 
   public void setOAuth2Auth(OAuth2Auth pOAuth2Auth) {
     this.mOAuth2Auth = pOAuth2Auth;
+  }
+
+  public boolean isEnable() {
+    return mEnable;
+  }
+
+  public void setEnable(boolean pEnable) {
+    this.mEnable = pEnable;
   }
 
 }
