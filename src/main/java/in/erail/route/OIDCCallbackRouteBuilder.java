@@ -1,7 +1,9 @@
 package in.erail.route;
 
+import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
 import in.erail.common.FramworkConstants;
+import io.netty.handler.codec.http.HttpScheme;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.auth.oauth2.OAuth2Auth;
@@ -14,6 +16,9 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
   private String mCallbackURI;
   private OAuth2Auth mOAuth2Auth;
   private String mQueryParamAuthCode;
+  private boolean mEnableProxy;
+  private String mSuccessPath;
+  private String mFailPath;
 
   public void handle(RoutingContext pRoutingCoutext) {
     JsonObject tokenConfig = getTokenConfig(pRoutingCoutext);
@@ -23,6 +28,8 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
         Session session = pRoutingCoutext.session().regenerateId();
         session.put(FramworkConstants.Session.PRINCIPAL, response.result().principal());
 
+        getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
+
         pRoutingCoutext
                 .response()
                 .putHeader(HttpHeaders.LOCATION, getSuccessURL(pRoutingCoutext))
@@ -30,6 +37,9 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
                 .end();
       } else {
         getLog().error(response.cause());
+
+        getLog().debug(() -> "Fail URL:" + getFailURL(pRoutingCoutext));
+
         pRoutingCoutext
                 .response()
                 .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
@@ -40,17 +50,48 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
   }
 
   private String baseURL(RoutingContext pRoutingContext) {
-    String host = pRoutingContext.request().getHeader("Host");
-    String protocol = pRoutingContext.request().getHeader("X-Forwarded-Proto");
-    return protocol + "://" + host;
+
+    String host;
+    String protocol;
+
+    if (isEnableProxy()) {
+      host = pRoutingContext.request().getHeader("X-Forwarded-Host");
+      protocol = pRoutingContext.request().getHeader("X-Forwarded-Proto");
+    } else {
+      host = pRoutingContext.request().getHeader("Host");
+      protocol = HttpScheme.HTTP.name().toString();
+    }
+
+    String url = protocol + "://" + host;
+
+    return url;
   }
 
   private String getSuccessURL(RoutingContext pRoutingContext) {
-    return baseURL(pRoutingContext) + "?login=success";
+    StringBuffer url = new StringBuffer();
+    url.append(url);
+    if (!Strings.isNullOrEmpty(getSuccessPath())) {
+      if (!getSuccessPath().startsWith("/")) {
+        url.append("/");
+      }
+      url.append(getSuccessPath());
+    }
+    url.append("?login=success");
+    return url.toString();
   }
 
   private String getFailURL(RoutingContext pRoutingContext) {
-    return baseURL(pRoutingContext) + "?login=fail";
+
+    StringBuffer url = new StringBuffer();
+    url.append(url);
+    if (!Strings.isNullOrEmpty(getFailPath())) {
+      if (!getFailPath().startsWith("/")) {
+        url.append("/");
+      }
+      url.append(getFailPath());
+    }
+    url.append("?login=fail");
+    return url.toString();
   }
 
   private JsonObject getTokenConfig(RoutingContext pRoutingContext) {
@@ -91,4 +132,29 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
     pRouter.route(getCallbackURI()).handler(this::handle);
     return pRouter;
   }
+
+  public boolean isEnableProxy() {
+    return mEnableProxy;
+  }
+
+  public void setEnableProxy(boolean pEnableProxy) {
+    this.mEnableProxy = pEnableProxy;
+  }
+
+  public String getSuccessPath() {
+    return mSuccessPath;
+  }
+
+  public void setSuccessPath(String pSuccessPath) {
+    this.mSuccessPath = pSuccessPath;
+  }
+
+  public String getFailPath() {
+    return mFailPath;
+  }
+
+  public void setFailPath(String pFailPath) {
+    this.mFailPath = pFailPath;
+  }
+
 }
