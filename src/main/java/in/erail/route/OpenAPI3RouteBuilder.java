@@ -147,7 +147,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
               RESTService service = (RESTService) api;
               apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
                 if (isSecurityEnable()) {
-                  routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getServiceUniqueId(), (event) -> {
+                  routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getOperationId(), (event) -> {
                     boolean authSuccess = event.succeeded() ? event.result() : false;
                     if (authSuccess) {
                       process(routingContext, service.getServiceUniqueId());
