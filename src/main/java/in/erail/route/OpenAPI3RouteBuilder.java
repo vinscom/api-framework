@@ -1,11 +1,14 @@
 package in.erail.route;
 
+import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Timer;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import in.erail.common.FramworkConstants;
+import in.erail.glue.annotation.StartService;
 import in.erail.glue.component.ServiceArray;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -18,6 +21,7 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
+import java.util.HashMap;
 
 /**
  *
@@ -30,6 +34,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
+  private HashMap<String, Timer> mMetricTimers = new HashMap<String, Timer>();
+  private MetricRegistry mMetricRegistry;
 
   public File getOpenAPI3File() {
     return mOpenAPI3File;
@@ -47,7 +53,24 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     this.mServices = pServices;
   }
 
+  @StartService
+  public void start() {
+
+    getServices()
+            .getServices()
+            .stream()
+            .forEach((api) -> {
+              RESTService service = (RESTService) api;
+              getMetricTimers().put(service.getServiceUniqueId(),
+                      getMetricRegistry().timer("api.framwork.service." + service.getServiceUniqueId())
+              );
+            });
+
+  }
+
   public void process(RoutingContext pRequestContext, String pServiceUniqueId) {
+
+    Timer.Context timerCtx = getMetricTimers().get(pServiceUniqueId).time();
 
     getVertx()
             .eventBus()
@@ -65,6 +88,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                                 .setStatusCode(400)
                                 .end(reply.cause().toString());
                       }
+                      timerCtx.stop();
                     });
 
   }
@@ -187,6 +211,22 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     } catch (IOException ex) {
       getLog().error(ex);
     }
+  }
+
+  public HashMap<String, Timer> getMetricTimers() {
+    return mMetricTimers;
+  }
+
+  public void setMetricTimers(HashMap<String, Timer> pMetricTimers) {
+    this.mMetricTimers = pMetricTimers;
+  }
+
+  public MetricRegistry getMetricRegistry() {
+    return mMetricRegistry;
+  }
+
+  public void setMetricRegistry(MetricRegistry pMetricRegistry) {
+    this.mMetricRegistry = pMetricRegistry;
   }
 
 }
