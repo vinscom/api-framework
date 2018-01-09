@@ -52,14 +52,17 @@ public class LeaderSelectionServiceTest {
             .toObservable()
             .firstOrError()
             .subscribe((msg) -> {
+              //Step 2: Got Leader Selection Message
               String leaderId = msg.body().getString("leader");
               //This will be done by BridgeEventHandler
               DeliveryOptions delOpt = new DeliveryOptions();
               delOpt.addHeader("session", "FAKE_LEADER_SOCKET");
 
+              //Step 3: Send Reply confirmation leadership
               eb
                       .rxSend(leaderId, new JsonObject(), delOpt)
                       .subscribe((reply) -> {
+                        //Step 4: Got empty confirmation on becoming leader
                         async.countDown();
                         service
                                 .getVertx()
@@ -67,20 +70,25 @@ public class LeaderSelectionServiceTest {
                                 .<String, String>rxGetClusterWideMap(service.getLeaderMapName())
                                 .subscribe((m) -> {
                                   service.getVertx().setTimer(100, (p) -> {
+                                    //Step 5: Check leader is correctly set in map
                                     m
                                             .rxGet("ninja-live")
                                             .subscribe((v) -> {
                                               context.assertEquals("FAKE_LEADER_SOCKET", v);
                                               async.countDown();
+                                              
+                                              //Step 6: Unregister leader
                                               service
                                                       .getVertx()
                                                       .eventBus()
                                                       .send(service.getBridgeEventUpdateTopicName(), unregsiterMsg);
 
                                               service.getVertx().setTimer(100, (p2) -> {
+                                                //Step 7: Check leader has been unregistered
                                                 m.rxGet("ninja-live").subscribe((v2) -> {
                                                   if (v2 == null || LeaderSelectionService.DEFAULT_LEADER_STATUS.equals(v2)) {
                                                     async.countDown();
+                                                    return;
                                                   }
                                                   context.fail("Wrong map value");
                                                 });
@@ -92,6 +100,7 @@ public class LeaderSelectionServiceTest {
             });
 
     Single.timer(100, TimeUnit.MILLISECONDS).subscribe((t) -> {
+      //Step 1: Send register event
       service.getVertx().eventBus().send(service.getBridgeEventUpdateTopicName(), regsiterMsg);
     });
 
