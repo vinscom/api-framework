@@ -1,6 +1,6 @@
 package in.erail.route;
 
-import in.erail.common.FramworkConstants;
+import in.erail.common.FrameworkConstants;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.auth.oauth2.impl.AccessTokenImpl;
 import io.vertx.ext.auth.oauth2.impl.OAuth2AuthProviderImpl;
@@ -35,7 +35,7 @@ public class LoadUserFromSessionRouteBuillder extends AbstractRouterBuilderImpl 
   public void handle(RoutingContext pRoutingContext) {
     Session session = pRoutingContext.session();
     if (session != null) {
-      JsonObject principal = session.get(FramworkConstants.Session.PRINCIPAL);
+      JsonObject principal = session.get(FrameworkConstants.Session.PRINCIPAL);
       if (principal != null) {
         OAuth2AuthProviderImpl provider = (OAuth2AuthProviderImpl) getOAuth2Auth().getDelegate();
         try {
