@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import in.erail.common.FramworkConstants;
+import in.erail.common.FrameworkConstants;
 import in.erail.glue.annotation.StartService;
 import in.erail.glue.component.ServiceArray;
 import io.netty.handler.codec.http.HttpHeaderNames;
@@ -98,19 +98,19 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     JsonObject result = new JsonObject();
 
     if (pContext.request().method() == HttpMethod.POST) {
-      result.put(FramworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+      result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
     } else {
-      result.put(FramworkConstants.RoutingContext.Json.BODY, new JsonObject());
+      result.put(FrameworkConstants.RoutingContext.Json.BODY, new JsonObject());
     }
 
     JsonObject headers = new JsonObject(convertMultiMapIntoMap(pContext.request().headers()));
-    result.put(FramworkConstants.RoutingContext.Json.HEADER, headers);
+    result.put(FrameworkConstants.RoutingContext.Json.HEADERS, headers);
 
     JsonObject query = new JsonObject(convertMultiMapIntoMap(pContext.queryParams()));
-    result.put(FramworkConstants.RoutingContext.Json.QUERY, query);
+    result.put(FrameworkConstants.RoutingContext.Json.QUERY, query);
 
     JsonObject params = new JsonObject(convertMultiMapIntoMap(pContext.request().params()));
-    result.put(FramworkConstants.RoutingContext.Json.PARAM, params);
+    result.put(FrameworkConstants.RoutingContext.Json.PARAM, params);
 
     getLog().debug(() -> "Context to JSON:" + result.toString());
 
@@ -119,8 +119,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   public HttpServerResponse buildResponseFromReply(JsonObject pReplyResponse, RoutingContext pContext) {
 
-    JsonObject headers = pReplyResponse.getJsonObject(FramworkConstants.RoutingContext.Json.HEADER, new JsonObject());
-    String statusCode = pReplyResponse.getString(FramworkConstants.RoutingContext.Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
+    JsonObject headers = pReplyResponse.getJsonObject(FrameworkConstants.RoutingContext.Json.HEADERS, new JsonObject());
+    String statusCode = pReplyResponse.getString(FrameworkConstants.RoutingContext.Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
 
     headers
             .fieldNames()
@@ -131,7 +131,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     pContext.response().setStatusCode(HttpResponseStatus.parseLine(statusCode).code());
 
-    Object body = pReplyResponse.getMap().get(FramworkConstants.RoutingContext.Json.BODY);
+    Object body = pReplyResponse.getMap().get(FrameworkConstants.RoutingContext.Json.BODY);
 
     if (body != null) {
       String bodyStr = body.toString();

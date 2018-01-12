@@ -4,7 +4,7 @@ package in.erail.common;
  *
  * @author vinay
  */
-public class FramworkConstants {
+public class FrameworkConstants {
 
   public static class Session {
 
@@ -15,11 +15,14 @@ public class FramworkConstants {
 
     public static class Json {
 
-      public static final String HEADER = "header";
+      public static final String HEADERS = "headers";
       public static final String PARAM = "param";
       public static final String QUERY = "query";
       public static final String BODY = "body";
       public static final String STATUS_CODE = "statusCode";
+      public static final String IS_BASE64_ENCODED = "isBase64Encoded";
+      public static final String QUERY_STRING_PARAM = "queryStringParameters";
+      public static final String PATH_PARAM = "pathParameters";
     }
 
   }

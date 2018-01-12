@@ -2,7 +2,7 @@ package in.erail.route;
 
 import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
-import in.erail.common.FramworkConstants;
+import in.erail.common.FrameworkConstants;
 import io.netty.handler.codec.http.HttpScheme;
 
 import io.vertx.core.json.JsonObject;
@@ -26,7 +26,7 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
       if (response.succeeded()) {
 
         Session session = pRoutingCoutext.session().regenerateId();
-        session.put(FramworkConstants.Session.PRINCIPAL, response.result().principal());
+        session.put(FrameworkConstants.Session.PRINCIPAL, response.result().principal());
 
         getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
 

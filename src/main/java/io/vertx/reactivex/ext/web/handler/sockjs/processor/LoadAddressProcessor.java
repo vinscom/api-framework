@@ -1,6 +1,6 @@
 package io.vertx.reactivex.ext.web.handler.sockjs.processor;
 
-import in.erail.common.FramworkConstants;
+import in.erail.common.FrameworkConstants;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
@@ -26,7 +26,7 @@ public class LoadAddressProcessor implements BridgeEventProcessor {
               
               JsonObject rawMessage = ctx.getBridgeEvent().getRawMessage();
               if (rawMessage != null) {
-                ctx.setAddress(rawMessage.getString(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_ADDRESS));
+                ctx.setAddress(rawMessage.getString(FrameworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_ADDRESS));
                 getLog().debug(() -> String.format("[%s] Address:[%s]", ctx.getId(), ctx.getAddress()));
               }
               return ctx;

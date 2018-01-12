@@ -1,7 +1,7 @@
 package in.erail.service.leader.sockjs.processor;
 
 import com.google.common.base.Strings;
-import in.erail.common.FramworkConstants;
+import in.erail.common.FrameworkConstants;
 import io.reactivex.Single;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
@@ -49,7 +49,7 @@ public class LeaderConfirmationMessageProcessor implements BridgeEventProcessor 
               }
 
               JsonObject rawMsg = ctx.getBridgeEvent().getRawMessage();
-              JsonObject headers = rawMsg.getJsonObject(FramworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
+              JsonObject headers = rawMsg.getJsonObject(FrameworkConstants.SockJS.BRIDGE_EVENT_RAW_MESSAGE_HEADERS);
 
               if (headers != null && headers.containsKey(getSendMessageHeaderConfirmMsgFieldName())) {
                 //Only add session on confirmation messages
