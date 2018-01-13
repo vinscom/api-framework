@@ -8,7 +8,7 @@ system using Vertx Framework (http://vertx.io/).
 .Example API Framework Deployment
 image::./docs/images/api-framwork-request-handling.png[API Framework Architecture]
 
-.AWS Lambda Deployment using API Framework
+.Example AWS Lambda Deployment using API Framework
 image::./docs/images/aws-lambda-request-handling.png[AWS Lambda Architecture]
 
 == Getting Started
