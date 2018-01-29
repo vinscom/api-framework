@@ -22,10 +22,10 @@ import org.apache.logging.log4j.Logger;
  */
 public class RateLimiterProcessor implements BridgeEventProcessor {
 
-  private final Map<BridgeEventType, Cache<String, Bucket>> mCache = new EnumMap(BridgeEventType.class);
-  private final Map<BridgeEventType, Integer> mTokenBucketSize = new EnumMap(BridgeEventType.class);
-  private final Map<BridgeEventType, Integer> mRateOfTokenFill = new EnumMap(BridgeEventType.class);
-  private final Map<BridgeEventType, Integer> mRateOfTokenFillDuration = new EnumMap(BridgeEventType.class);
+  private final Map<BridgeEventType, Cache<String, Bucket>> mCache = new EnumMap<>(BridgeEventType.class);
+  private final Map<BridgeEventType, Integer> mTokenBucketSize = new EnumMap<>(BridgeEventType.class);
+  private final Map<BridgeEventType, Integer> mRateOfTokenFill = new EnumMap<>(BridgeEventType.class);
+  private final Map<BridgeEventType, Integer> mRateOfTokenFillDuration = new EnumMap<>(BridgeEventType.class);
   private int mDefaultTokenBucketSize = 120;
   private int mDefaultRateOfTokenFill = 1;
   private int mDefaultRateOfTokenFillDuration = 1;

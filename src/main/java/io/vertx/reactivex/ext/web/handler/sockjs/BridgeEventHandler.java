@@ -1,5 +1,6 @@
 package io.vertx.reactivex.ext.web.handler.sockjs;
 
+import com.codahale.metrics.Meter;
 import io.vertx.reactivex.ext.web.handler.sockjs.processor.BridgeEventProcessor;
 import in.erail.glue.component.ServiceArray;
 import io.reactivex.Observable;
@@ -24,21 +25,30 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
   private ServiceArray mSocketIdleProcessors;
   private ServiceArray mSoketPingProcessors;
   private ServiceArray mUnregisterProcessors;
+  private Meter mMetricsBridgeEventSend;
+  private Meter mMetricsBridgeEventPublish;
+  private Meter mMetricsBridgeEventReceive;
+  private Meter mMetricsBridgeEventRegister;
+  private Meter mMetricsBridgeEventUnregister;
 
   @Override
   public void handle(BridgeEvent pEvent) {
 
     switch (pEvent.type()) {
       case PUBLISH:
+        getMetricsBridgeEventPublish().mark();
         process(getPublishProcessors(), pEvent);
         break;
       case RECEIVE:
+        getMetricsBridgeEventReceive().mark();
         process(getReceiveProcessors(), pEvent);
         break;
       case REGISTER:
+        getMetricsBridgeEventRegister().mark();
         process(getRegisterProcessors(), pEvent);
         break;
       case SEND:
+        getMetricsBridgeEventSend().mark();
         process(getSendProcessors(), pEvent);
         break;
       case SOCKET_CLOSED:
@@ -54,6 +64,7 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
         process(getSoketPingProcessors(), pEvent);
         break;
       case UNREGISTER:
+        getMetricsBridgeEventUnregister().mark();
         process(getUnregisterProcessors(), pEvent);
         break;
     }
@@ -170,6 +181,46 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
 
   public void setLog(Logger pLog) {
     this.mLog = pLog;
+  }
+
+  public Meter getMetricsBridgeEventSend() {
+    return mMetricsBridgeEventSend;
+  }
+
+  public void setMetricsBridgeEventSend(Meter pMetricsBridgeEventSend) {
+    this.mMetricsBridgeEventSend = pMetricsBridgeEventSend;
+  }
+
+  public Meter getMetricsBridgeEventPublish() {
+    return mMetricsBridgeEventPublish;
+  }
+
+  public void setMetricsBridgeEventPublish(Meter pMetricsBridgeEventPublish) {
+    this.mMetricsBridgeEventPublish = pMetricsBridgeEventPublish;
+  }
+
+  public Meter getMetricsBridgeEventReceive() {
+    return mMetricsBridgeEventReceive;
+  }
+
+  public void setMetricsBridgeEventReceive(Meter pMetricsBridgeEventReceive) {
+    this.mMetricsBridgeEventReceive = pMetricsBridgeEventReceive;
+  }
+
+  public Meter getMetricsBridgeEventRegister() {
+    return mMetricsBridgeEventRegister;
+  }
+
+  public void setMetricsBridgeEventRegister(Meter pMetricsBridgeEventRegister) {
+    this.mMetricsBridgeEventRegister = pMetricsBridgeEventRegister;
+  }
+
+  public Meter getMetricsBridgeEventUnregister() {
+    return mMetricsBridgeEventUnregister;
+  }
+
+  public void setMetricsBridgeEventUnregister(Meter pMetricsBridgeEventUnregister) {
+    this.mMetricsBridgeEventUnregister = pMetricsBridgeEventUnregister;
   }
 
 }
