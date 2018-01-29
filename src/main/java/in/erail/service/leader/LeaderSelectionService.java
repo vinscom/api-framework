@@ -116,7 +116,7 @@ public class LeaderSelectionService extends SingletonServiceImpl {
                         }
                       })
                       .onErrorReturn((err) -> {
-                        getLog().error(err);
+                        getLog().error(String.format("[%s]", debugKey), err);
                         topicMap
                                 .rxRemoveIfPresent(lctx.getAddress(), DEFAULT_LEADER_STATUS)
                                 .subscribe((success) -> {
@@ -253,7 +253,6 @@ public class LeaderSelectionService extends SingletonServiceImpl {
   @Override
   public Completable startService() {
 
-    CompletableFuture<Boolean> serviceStarted = new CompletableFuture<>();
     mTopicLeaderMap = new CompletableFuture<>();
 
     getVertx()

@@ -34,7 +34,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
-  private HashMap<String, Timer> mMetricTimers = new HashMap<String, Timer>();
+  private HashMap<String, Timer> mMetricTimers = new HashMap<>();
   private MetricRegistry mMetricRegistry;
 
   public File getOpenAPI3File() {
@@ -62,7 +62,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .forEach((api) -> {
               RESTService service = (RESTService) api;
               getMetricTimers().put(service.getServiceUniqueId(),
-                      getMetricRegistry().timer("api.framwork.service." + service.getServiceUniqueId())
+                      getMetricRegistry().timer("api.framework.service." + service.getServiceUniqueId())
               );
             });
 
@@ -107,10 +107,10 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     result.put(FrameworkConstants.RoutingContext.Json.HEADERS, headers);
 
     JsonObject query = new JsonObject(convertMultiMapIntoMap(pContext.queryParams()));
-    result.put(FrameworkConstants.RoutingContext.Json.QUERY, query);
+    result.put(FrameworkConstants.RoutingContext.Json.QUERY_STRING_PARAM, query);
 
     JsonObject params = new JsonObject(convertMultiMapIntoMap(pContext.request().params()));
-    result.put(FrameworkConstants.RoutingContext.Json.PARAM, params);
+    result.put(FrameworkConstants.RoutingContext.Json.PATH_PARAM, params);
 
     getLog().debug(() -> "Context to JSON:" + result.toString());
 

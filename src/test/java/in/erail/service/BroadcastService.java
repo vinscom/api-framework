@@ -14,7 +14,7 @@ public class BroadcastService extends RESTServiceImpl{
 
   @Override
   public void process(Message<JsonObject> pMessage) {
-    JsonObject param = pMessage.body().getJsonObject(FrameworkConstants.RoutingContext.Json.PARAM);
+    JsonObject param = pMessage.body().getJsonObject(FrameworkConstants.RoutingContext.Json.PATH_PARAM);
     String topicName = param.getString(TestConstants.Service.Broadcast.APIMessage.PARAM_TOPIC_NAME);
 
     if(Strings.isNullOrEmpty(topicName)){
