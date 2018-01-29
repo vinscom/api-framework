@@ -36,20 +36,20 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
 
     switch (pEvent.type()) {
       case PUBLISH:
-        process(getPublishProcessors(), pEvent);
         getMetricsBridgeEventPublish().mark();
+        process(getPublishProcessors(), pEvent);
         break;
       case RECEIVE:
-        process(getReceiveProcessors(), pEvent);
         getMetricsBridgeEventReceive().mark();
+        process(getReceiveProcessors(), pEvent);
         break;
       case REGISTER:
-        process(getRegisterProcessors(), pEvent);
         getMetricsBridgeEventRegister().mark();
+        process(getRegisterProcessors(), pEvent);
         break;
       case SEND:
-        process(getSendProcessors(), pEvent);
         getMetricsBridgeEventSend().mark();
+        process(getSendProcessors(), pEvent);
         break;
       case SOCKET_CLOSED:
         process(getSocketClosedProcessors(), pEvent);
@@ -64,8 +64,8 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
         process(getSoketPingProcessors(), pEvent);
         break;
       case UNREGISTER:
-        process(getUnregisterProcessors(), pEvent);
         getMetricsBridgeEventUnregister().mark();
+        process(getUnregisterProcessors(), pEvent);
         break;
     }
   }

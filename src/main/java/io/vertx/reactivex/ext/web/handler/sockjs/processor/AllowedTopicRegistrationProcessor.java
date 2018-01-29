@@ -1,11 +1,13 @@
 package io.vertx.reactivex.ext.web.handler.sockjs.processor;
 
-import com.google.common.base.Strings;
-import io.reactivex.Single;
-import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEvent;
-import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 import java.util.List;
+
 import org.apache.logging.log4j.Logger;
+
+import com.google.common.base.Strings;
+
+import io.reactivex.Single;
+import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 
 /**
  *

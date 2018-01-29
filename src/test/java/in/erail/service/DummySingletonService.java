@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class DummySingletonService extends SingletonServiceImpl {
 
-  private List<String> mRecorder = new ArrayList();
+  private List<String> mRecorder = new ArrayList<>();
 
   @Override
   public Completable startService() {
