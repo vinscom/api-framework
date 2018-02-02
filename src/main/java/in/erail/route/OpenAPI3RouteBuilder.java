@@ -98,7 +98,12 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     JsonObject result = new JsonObject();
 
     if (pContext.request().method() == HttpMethod.POST) {
-      result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+      boolean bodyAsJson = pContext.<Boolean>get(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON);
+      if (bodyAsJson) {
+        result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+      } else {
+        result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBody());
+      }
     } else {
       result.put(FrameworkConstants.RoutingContext.Json.BODY, new JsonObject());
     }
@@ -170,6 +175,9 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .forEach((api) -> {
               RESTService service = (RESTService) api;
               apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
+
+                routingContext.put(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON, service.isBodyAsJson());
+
                 if (isSecurityEnable()) {
 
                   if (routingContext.user() == null) {
