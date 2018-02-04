@@ -2,6 +2,8 @@ package in.erail.route;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -121,6 +123,10 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     JsonObject headers = pReplyResponse.getJsonObject(FrameworkConstants.RoutingContext.Json.HEADERS, new JsonObject());
     String statusCode = pReplyResponse.getString(FrameworkConstants.RoutingContext.Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
+
+    if (!headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
+      headers.put(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
+    }
 
     headers
             .fieldNames()
