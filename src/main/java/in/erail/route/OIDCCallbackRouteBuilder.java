@@ -55,8 +55,8 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
     String protocol;
 
     if (isEnableProxy()) {
-      host = pRoutingContext.request().getHeader("X-Forwarded-Host");
-      protocol = pRoutingContext.request().getHeader("X-Forwarded-Proto");
+      host = pRoutingContext.request().getHeader(HttpHeaders.X_FORWARDED_HOST);
+      protocol = pRoutingContext.request().getHeader(HttpHeaders.X_FORWARDED_PROTO);
     } else {
       host = pRoutingContext.request().getHeader("Host");
       protocol = HttpScheme.HTTP.name().toString();
