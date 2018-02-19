@@ -14,17 +14,12 @@ import io.vertx.reactivex.core.Vertx;
 public class SockJSHandlerInstance {
 
   private Vertx mVertx;
-  private boolean mEnable = true;
   private BridgeOptions mBridgeOptions;
   private Handler<BridgeEvent> mBridgeEventHandler;
   private SockJSHandler mSockJSHandler;
 
   @StartService
   public void start() {
-
-    if(!isEnable()){
-      return;
-    }
     
     // Eventbus handle
     SockJSHandlerOptions sockJSHandlerOptions = (new SockJSHandlerOptions())
@@ -45,14 +40,6 @@ public class SockJSHandlerInstance {
 
   public void setVertx(Vertx pVertx) {
     this.mVertx = pVertx;
-  }
-
-  public boolean isEnable() {
-    return mEnable;
-  }
-
-  public void setEnable(boolean pEnable) {
-    this.mEnable = pEnable;
   }
 
   public BridgeOptions getBridgeOptions() {
