@@ -175,6 +175,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .getServices()
             .forEach((api) -> {
               RESTService service = (RESTService) api;
+
               apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
                 if (isSecurityEnable()) {
 
