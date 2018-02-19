@@ -34,9 +34,9 @@ public class SockJSHandlerInstance {
             .addDisabledTransport(Transport.XHR.toString())
             .setInsertJSESSIONID(false);
 
-     setSockJSHandler(SockJSHandler
+     mSockJSHandler = SockJSHandler
             .create(getVertx(), sockJSHandlerOptions)
-            .bridge(getBridgeOptions(), getBridgeEventHandler()));
+            .bridge(getBridgeOptions(), getBridgeEventHandler());
   }
 
   public Vertx getVertx() {
@@ -71,12 +71,8 @@ public class SockJSHandlerInstance {
     this.mBridgeEventHandler = pBridgeEventHandler;
   }
 
-  public SockJSHandler getSockJSHandler() {
+  public SockJSHandler create() {
     return mSockJSHandler;
-  }
-
-  public void setSockJSHandler(SockJSHandler pSockJSHandler) {
-    this.mSockJSHandler = pSockJSHandler;
   }
 
 }
