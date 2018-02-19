@@ -25,7 +25,7 @@ public class VerticalDeployerTest {
   public void testVerticalDeployment(TestContext context) {
 
     Async async = context.async(4);
-    io.vertx.reactivex.core.Vertx vertx = Glue.instance().<VertxInstance>resolve("/io/vertx/core/VertxInstance").getVertx();
+    io.vertx.reactivex.core.Vertx vertx = Glue.instance().resolve("/io/vertx/core/Vertx");
 
     //Reply from vertical
     vertx.eventBus().<JsonObject>consumer("vertical.test.js", (event) -> {

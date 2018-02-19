@@ -8,6 +8,7 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.Timeout;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.reactivex.core.Vertx;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.junit.Test;
@@ -28,12 +29,11 @@ public class SingletonServiceImplTest {
   public void testStart(TestContext context) throws InterruptedException, ExecutionException {
 
     Async async = context.async(2);
-    
-    VertxInstance vertxInst = Glue.instance().resolve("/io/vertx/core/VertxInstance");
+
+    Vertx vertx = Glue.instance().resolve("/io/vertx/core/Vertx");
     ClusterManager cm = Glue.instance().resolve("/io/vertx/spi/cluster/ClusterManager");
 
-    vertxInst
-            .getVertx()
+    vertx
             .sharedData()
             .<String, String>rxGetClusterWideMap("__in.erail.services")
             .flatMapCompletable((m) -> m.rxPut("DummySingletonService", "NodeDownID")) //Service is running on some other node
@@ -42,9 +42,7 @@ public class SingletonServiceImplTest {
               Observable
                       .timer(100, TimeUnit.MILLISECONDS)
                       .subscribe((t) -> {
-
-                        vertxInst
-                                .getVertx()
+                        vertx
                                 .sharedData()
                                 .<String, String>rxGetClusterWideMap("__in.erail.services")
                                 .flatMap((m) -> {
@@ -59,8 +57,7 @@ public class SingletonServiceImplTest {
                                   Observable
                                           .timer(100, TimeUnit.MILLISECONDS)
                                           .subscribe((p) -> {
-                                            vertxInst
-                                                    .getVertx()
+                                            vertx
                                                     .sharedData()
                                                     .<String, String>rxGetClusterWideMap("__in.erail.services")
                                                     .flatMap(m2 -> {
