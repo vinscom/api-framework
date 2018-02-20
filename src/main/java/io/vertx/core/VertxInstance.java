@@ -25,7 +25,7 @@ public class VertxInstance {
 
   }
 
-  public Vertx getVertx() {
+  public Vertx create() {
 
     try {
       return mVertx.get();

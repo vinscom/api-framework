@@ -27,8 +27,8 @@ public abstract class RESTServiceImpl implements RESTService {
               .<JsonObject>consumer(getServiceUniqueId())
               .toFlowable()
               .subscribeOn(Schedulers.io())
-              .doOnSubscribe((s) -> getLog().info(String.format("%s[%s] service started", getServiceUniqueId(),Thread.currentThread().getName())))
-              .doOnTerminate(() -> getLog().info(String.format("%s[%s] service stopped", getServiceUniqueId(),Thread.currentThread().getName())))
+              .doOnSubscribe((s) -> getLog().info(String.format("%s[%s] service started", getServiceUniqueId(), Thread.currentThread().getName())))
+              .doOnTerminate(() -> getLog().info(String.format("%s[%s] service stopped", getServiceUniqueId(), Thread.currentThread().getName())))
               .subscribe(this::process);
     }
   }

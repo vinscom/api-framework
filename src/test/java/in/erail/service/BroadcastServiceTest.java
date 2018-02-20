@@ -52,6 +52,7 @@ public class BroadcastServiceTest {
             .handler(response -> {
               context.assertEquals(response.statusCode(), 200, response.statusMessage());
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString()),"*");
+              context.assertEquals(response.getHeader(HttpHeaderNames.CONTENT_TYPE.toString()),"application/json; charset=utf-8");
               response.bodyHandler((event) -> {
                 context.assertEquals(event.toString(), TestConstants.Service.Message.successMessage().toString());
                 async.countDown();

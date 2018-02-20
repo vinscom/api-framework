@@ -34,7 +34,7 @@ public class LoadUserFromSessionRouteBuillder extends AbstractRouterBuilderImpl 
 
   public void handle(RoutingContext pRoutingContext) {
     Session session = pRoutingContext.session();
-    if (session != null) {
+    if (session != null && getOAuth2Auth() != null) {
       JsonObject principal = session.get(FrameworkConstants.Session.PRINCIPAL);
       if (principal != null) {
         OAuth2AuthProviderImpl provider = (OAuth2AuthProviderImpl) getOAuth2Auth().getDelegate();
