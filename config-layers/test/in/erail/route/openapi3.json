@@ -11,16 +11,14 @@
         "summary": "Send message to all subscriber of topicName",
         "description": "Send message to all subscriber of topicName",
         "operationId": "API_V1_BROADCAST_SERVICE",
-        "parameters": [
-          {
-            "name": "topicName",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
+        "parameters": [{
+          "name": "topicName",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
           }
-        ],
+        }],
         "responses": {
           "200": {
             "description": "Success Response",
@@ -44,17 +42,61 @@
           "required": true
         }
       },
-      "parameters": [
-        {
+      "parameters": [{
+        "name": "topicName",
+        "in": "path",
+        "description": "Name of topic on which to broadcast message",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }]
+    },
+    "/broadcastv2/{topicName}": {
+      "post": {
+        "summary": "Send message to all subscriber of topicName",
+        "description": "Send message to all subscriber of topicName",
+        "operationId": "API_V1_BROADCAST_V2_SERVICE",
+        "parameters": [{
           "name": "topicName",
           "in": "path",
-          "description": "Name of topic on which to broadcast message",
           "required": true,
           "schema": {
             "type": "string"
           }
+        }],
+        "responses": {
+          "200": {
+            "description": "Success Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/broadcastMessage"
+              }
+            }
+          },
+          "required": true
         }
-      ]
+      },
+      "parameters": [{
+        "name": "topicName",
+        "in": "path",
+        "description": "Name of topic on which to broadcast message",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }]
     }
   },
   "components": {

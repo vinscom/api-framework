@@ -2,6 +2,7 @@ package in.erail.route;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.io.BaseEncoding;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import java.io.File;
@@ -23,6 +24,7 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
+import io.vertx.reactivex.core.buffer.Buffer;
 import java.util.HashMap;
 
 /**
@@ -100,7 +102,12 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     JsonObject result = new JsonObject();
 
     if (pContext.request().method() == HttpMethod.POST) {
-      result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+      boolean bodyAsJson = pContext.<Boolean>get(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON);
+      if (bodyAsJson) {
+        result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+      } else {
+        result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBody().getDelegate().getBytes());
+      }
     } else {
       result.put(FrameworkConstants.RoutingContext.Json.BODY, new JsonObject());
     }
@@ -177,6 +184,9 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
               RESTService service = (RESTService) api;
 
               apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
+
+                routingContext.put(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON, service.isBodyAsJson());
+
                 if (isSecurityEnable()) {
 
                   if (routingContext.user() == null) {
