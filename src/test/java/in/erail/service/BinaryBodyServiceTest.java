@@ -20,7 +20,7 @@ import io.netty.handler.codec.http.HttpHeaderNames;
  * @author vinay
  */
 @RunWith(VertxUnitRunner.class)
-public class BroadcastServiceBodyAsBinaryTest {
+public class BinaryBodyServiceTest {
 
   @Rule
   public Timeout rule = Timeout.seconds(2000);
@@ -28,16 +28,9 @@ public class BroadcastServiceBodyAsBinaryTest {
   @Test
   public void testProcess(TestContext context) {
 
-    Async async = context.async(2);
+    Async async = context.async();
 
     Server server = Glue.instance().resolve("/in/erail/server/Server");
-
-    //API Reply
-    server.getVertx().eventBus().<JsonObject>consumer("testTopic", (event) -> {
-      String data = event.body().getString("data");
-      context.assertEquals("testdata", data);
-      async.countDown();
-    });
 
     //Broadcast Request
     String json = new JsonObject().put("data", "testdata").toString();
@@ -54,7 +47,7 @@ public class BroadcastServiceBodyAsBinaryTest {
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString()),"*");
               context.assertEquals(response.getHeader(HttpHeaderNames.CONTENT_TYPE.toString()),"application/json; charset=utf-8");
               response.bodyHandler((event) -> {
-                context.assertEquals(event.toString(), TestConstants.Service.Message.successMessage().toString());
+                context.assertEquals(event.toString(), "19");
                 async.countDown();
               });
             })

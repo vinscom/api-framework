@@ -11,7 +11,7 @@ import io.vertx.reactivex.core.eventbus.Message;
  *
  * @author vinay
  */
-public class BroadcastServiceBodyAsBinary extends RESTServiceImpl{
+public class BinaryBodyService extends RESTServiceImpl{
 
   @Override
   public void process(Message<JsonObject> pMessage) {
@@ -25,7 +25,7 @@ public class BroadcastServiceBodyAsBinary extends RESTServiceImpl{
     byte[] body = pMessage.body().getBinary(FrameworkConstants.RoutingContext.Json.BODY);
     
     JsonObject resp = new JsonObject(Buffer.buffer(body));
-    resp.put(FrameworkConstants.RoutingContext.Json.BODY, TestConstants.Service.Message.successMessage());
+    resp.put(FrameworkConstants.RoutingContext.Json.BODY, Integer.toString(body.length));
     
     pMessage.reply(resp);
   }
