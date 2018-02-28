@@ -38,7 +38,7 @@ public class CORSRouteBuilderTest {
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
             .putHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
             .handler(response -> {
-              context.assertEquals(response.statusCode(), 204, response.statusMessage());
+              context.assertEquals(response.statusCode(), 200, response.statusMessage());
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS.toString()), "GET,POST,OPTIONS");
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString()), "*");
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_MAX_AGE.toString()), "3600");
