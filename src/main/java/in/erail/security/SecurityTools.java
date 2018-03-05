@@ -42,6 +42,11 @@ public class SecurityTools {
 
     setRandom(new SecureRandom());
 
+    if (!getVertx().isClustered()) {
+      mGlobalUniqueString.complete("A" + mRandom.nextInt());
+      return;
+    }
+
     Map<String, Object> cryptCtx = new HashMap<>();
 
     Single<Lock> lock = getVertx()
