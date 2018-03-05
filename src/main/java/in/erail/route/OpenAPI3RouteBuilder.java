@@ -2,7 +2,6 @@ package in.erail.route;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.io.BaseEncoding;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import java.io.File;
@@ -24,7 +23,6 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
-import io.vertx.reactivex.core.buffer.Buffer;
 import java.util.HashMap;
 
 /**
