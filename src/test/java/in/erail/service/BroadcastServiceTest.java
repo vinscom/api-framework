@@ -1,6 +1,7 @@
 package in.erail.service;
 
 import com.google.common.net.HttpHeaders;
+import com.google.common.net.MediaType;
 import in.erail.server.Server;
 import in.erail.test.TestConstants;
 import org.junit.Test;
@@ -45,7 +46,7 @@ public class BroadcastServiceTest {
             .getVertx()
             .createHttpClient()
             .post(server.getPort(), server.getHost(), "/v1/broadcast/testTopic")
-            .putHeader("content-type", "application/json")
+            .putHeader("content-type", MediaType.JSON_UTF_8.toString())
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
             .putHeader("content-length", Integer.toString(json.length()))
             .putHeader(HttpHeaders.AUTHORIZATION, TestConstants.ACCESS_TOKEN)

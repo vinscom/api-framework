@@ -2,6 +2,7 @@ package in.erail.route;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import java.io.File;
@@ -102,7 +103,10 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     if (pContext.request().method() == HttpMethod.POST) {
       boolean bodyAsJson = pContext.<Boolean>get(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON);
       if (bodyAsJson) {
-        result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+        String contentType = pContext.request().headers().get(HttpHeaders.CONTENT_TYPE);
+        if (!Strings.isNullOrEmpty(contentType) && contentType.equals(MediaType.JSON_UTF_8.toString())) {
+          result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
+        }
       } else {
         result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBody().getDelegate().getBytes());
       }
@@ -158,7 +162,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .getDelegate()
             .entries()
             .stream()
-            .collect(Collectors.toMap((t) -> t.getKey(), (t) -> t.getValue()));
+            .collect(Collectors.toMap((t) -> t.getKey(), (t) -> t.getValue(), (a, b) -> a));
   }
 
   public DeliveryOptions getDeliveryOptions() {
