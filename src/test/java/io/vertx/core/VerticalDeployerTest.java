@@ -29,6 +29,7 @@ public class VerticalDeployerTest {
 
     //Reply from vertical
     vertx.eventBus().<JsonObject>consumer("vertical.test.js", (event) -> {
+      context.assertEquals("in/erail/vertical/js/TestVerticalService.js", event.body());
       async.countDown();
     });
     
