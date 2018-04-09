@@ -103,8 +103,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     if (pContext.request().method() == HttpMethod.POST) {
       boolean bodyAsJson = pContext.<Boolean>get(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON);
       if (bodyAsJson) {
-        String contentType = pContext.request().headers().get(HttpHeaders.CONTENT_TYPE);
-        if (!Strings.isNullOrEmpty(contentType) && contentType.equals(MediaType.JSON_UTF_8.toString())) {
+        String mediaTypeHeader = pContext.request().headers().get(HttpHeaders.CONTENT_TYPE);
+        MediaType contentType;
+        if (Strings.isNullOrEmpty(mediaTypeHeader)) {
+          contentType = MediaType.JSON_UTF_8;
+        } else {
+          contentType = MediaType.parse(mediaTypeHeader);
+        }
+        if (MediaType.JSON_UTF_8.type().equals(contentType.type()) && MediaType.JSON_UTF_8.subtype().equals(contentType.subtype())) {
           result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
         }
       } else {
