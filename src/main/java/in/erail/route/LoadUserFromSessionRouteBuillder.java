@@ -1,9 +1,9 @@
 package in.erail.route;
 
-import in.erail.common.FramworkConstants;
+import in.erail.common.FrameworkConstants;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.oauth2.impl.AccessTokenImpl;
 import io.vertx.ext.auth.oauth2.impl.OAuth2AuthProviderImpl;
+import io.vertx.ext.auth.oauth2.impl.OAuth2TokenImpl;
 import io.vertx.reactivex.ext.auth.oauth2.AccessToken;
 import io.vertx.reactivex.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.reactivex.ext.web.Router;
@@ -34,12 +34,12 @@ public class LoadUserFromSessionRouteBuillder extends AbstractRouterBuilderImpl 
 
   public void handle(RoutingContext pRoutingContext) {
     Session session = pRoutingContext.session();
-    if (session != null) {
-      JsonObject principal = session.<JsonObject>get(FramworkConstants.Session.PRINCIPAL);
+    if (session != null && getOAuth2Auth() != null) {
+      JsonObject principal = session.get(FrameworkConstants.Session.PRINCIPAL);
       if (principal != null) {
         OAuth2AuthProviderImpl provider = (OAuth2AuthProviderImpl) getOAuth2Auth().getDelegate();
         try {
-          AccessTokenImpl token = new AccessTokenImpl(provider, principal);
+          OAuth2TokenImpl token = new OAuth2TokenImpl(provider, principal);
           pRoutingContext.setUser(new AccessToken(token));
         } catch (RuntimeException e) {
           getLog().error(e);

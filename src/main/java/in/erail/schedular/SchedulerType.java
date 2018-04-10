@@ -8,5 +8,5 @@ public enum SchedulerType {
   COMPUTATION,
   IO,
   NEWTHREAD,
-  SINGLE;
+  SINGLE
 }

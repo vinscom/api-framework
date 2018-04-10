@@ -25,3 +25,7 @@ hs_err_pid*
 .project
 nbactions.xml
 .settings
+/nbproject/
+.idea
+.vertx
+api-framwork.iml

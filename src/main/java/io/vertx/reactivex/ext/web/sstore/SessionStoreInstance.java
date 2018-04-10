@@ -16,9 +16,9 @@ public class SessionStoreInstance {
   @StartService
   public void start() {
     if (isClusterEnable()) {
-      setSessionStore(ClusteredSessionStore.create(getVertx()));
+      mSessionStore = ClusteredSessionStore.create(getVertx());
     } else {
-      setSessionStore(LocalSessionStore.create(getVertx()));
+      mSessionStore = LocalSessionStore.create(getVertx());
     }
   }
 
@@ -38,12 +38,8 @@ public class SessionStoreInstance {
     this.mVertx = pVertx;
   }
 
-  public SessionStore getSessionStore() {
+  public SessionStore create() {
     return mSessionStore;
-  }
-
-  public void setSessionStore(SessionStore pSessionStore) {
-    this.mSessionStore = pSessionStore;
   }
 
 }

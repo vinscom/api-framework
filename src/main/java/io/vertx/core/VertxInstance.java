@@ -3,37 +3,26 @@ package io.vertx.core;
 import io.vertx.reactivex.core.Vertx;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import in.erail.glue.annotation.StartService;
 
 public class VertxInstance {
 
   private VertxOptions mVertxOptions;
   private boolean mClusterEnable = true;
-  private CompletableFuture<Vertx> mVertx = null;
+  private CompletableFuture<Vertx> mVertx = new CompletableFuture<>();
 
   @StartService
   public void start() {
-
     if (isClusterEnable()) {
-      mVertx = new CompletableFuture<>();
       Vertx.rxClusteredVertx(getVertxOptions()).subscribe((t) -> mVertx.complete(t));
     } else {
-      mVertx = CompletableFuture.completedFuture(Vertx.vertx(getVertxOptions()));
+      mVertx.complete(Vertx.vertx(getVertxOptions()));
     }
 
   }
 
-  public Vertx getVertx() {
-
-    try {
+  public Vertx create() throws InterruptedException, ExecutionException {
       return mVertx.get();
-    } catch (InterruptedException | ExecutionException ex) {
-      Logger.getLogger(VertxInstance.class.getName()).log(Level.SEVERE, null, ex);
-    }
-
-    return null;
   }
 
   public VertxOptions getVertxOptions() {

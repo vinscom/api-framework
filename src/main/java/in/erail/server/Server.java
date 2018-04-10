@@ -18,19 +18,18 @@ import in.erail.glue.annotation.StartService;
  */
 public class Server {
 
-  private int mPort;
-  private String mHost;
   private Vertx mVertx;
   private String[] mRouterBuilder;
   private String[] mMountPath;
   private Router[] mRouter;
   private Logger mLog;
   private SockJSHandler mSockJSHandler;
+  private HttpServerOptions mHttpServerOptions;
 
   @StartService
   public void start() {
 
-    HttpServer server = getVertx().createHttpServer(new HttpServerOptions().setPort(getPort()).setHost(getHost()));
+    HttpServer server = getVertx().createHttpServer(getHttpServerOptions());
 
     Router router = Router.router(getVertx());
 
@@ -52,7 +51,7 @@ public class Server {
             .rxListen()
             .blockingGet();
 
-    getLog().debug(() -> String.format("---------------Server[%s:%s] is ready-----------------", getHost(), getPort()));
+    getLog().debug(() -> String.format("---------------Server[%s:%s] is ready-----------------", getHttpServerOptions().getHost(), getHttpServerOptions().getPort()));
   }
 
   public Vertx getVertx() {
@@ -61,22 +60,6 @@ public class Server {
 
   public void setVertx(Vertx pVertx) {
     this.mVertx = pVertx;
-  }
-
-  public int getPort() {
-    return mPort;
-  }
-
-  public void setPort(int pPort) {
-    this.mPort = pPort;
-  }
-
-  public String getHost() {
-    return mHost;
-  }
-
-  public void setHost(String pHost) {
-    this.mHost = pHost;
   }
 
   public String[] getRouterBuilder() {
@@ -113,6 +96,14 @@ public class Server {
 
   public void setSockJSHandler(SockJSHandler pSockJSHandler) {
     this.mSockJSHandler = pSockJSHandler;
+  }
+
+  public HttpServerOptions getHttpServerOptions() {
+    return mHttpServerOptions;
+  }
+
+  public void setHttpServerOptions(HttpServerOptions pHttpServerOptions) {
+    this.mHttpServerOptions = pHttpServerOptions;
   }
 
 }

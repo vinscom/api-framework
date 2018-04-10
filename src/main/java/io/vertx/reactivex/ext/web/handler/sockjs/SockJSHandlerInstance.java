@@ -14,17 +14,12 @@ import io.vertx.reactivex.core.Vertx;
 public class SockJSHandlerInstance {
 
   private Vertx mVertx;
-  private boolean mEnable = true;
   private BridgeOptions mBridgeOptions;
   private Handler<BridgeEvent> mBridgeEventHandler;
   private SockJSHandler mSockJSHandler;
 
   @StartService
   public void start() {
-
-    if(!isEnable()){
-      return;
-    }
     
     // Eventbus handle
     SockJSHandlerOptions sockJSHandlerOptions = (new SockJSHandlerOptions())
@@ -34,9 +29,9 @@ public class SockJSHandlerInstance {
             .addDisabledTransport(Transport.XHR.toString())
             .setInsertJSESSIONID(false);
 
-     setSockJSHandler(SockJSHandler
+     mSockJSHandler = SockJSHandler
             .create(getVertx(), sockJSHandlerOptions)
-            .bridge(getBridgeOptions(), getBridgeEventHandler()));
+            .bridge(getBridgeOptions(), getBridgeEventHandler());
   }
 
   public Vertx getVertx() {
@@ -45,14 +40,6 @@ public class SockJSHandlerInstance {
 
   public void setVertx(Vertx pVertx) {
     this.mVertx = pVertx;
-  }
-
-  public boolean isEnable() {
-    return mEnable;
-  }
-
-  public void setEnable(boolean pEnable) {
-    this.mEnable = pEnable;
   }
 
   public BridgeOptions getBridgeOptions() {
@@ -71,12 +58,8 @@ public class SockJSHandlerInstance {
     this.mBridgeEventHandler = pBridgeEventHandler;
   }
 
-  public SockJSHandler getSockJSHandler() {
+  public SockJSHandler create() {
     return mSockJSHandler;
-  }
-
-  public void setSockJSHandler(SockJSHandler pSockJSHandler) {
-    this.mSockJSHandler = pSockJSHandler;
   }
 
 }

@@ -1,0 +1,17 @@
+= API Framework
+Vinay Kumar
+v0.1
+
+API Framework is structured code/pattern/project template for you to write API based
+system using Vertx Framework (http://vertx.io/).
+
+.Example API Framework Deployment
+image::./docs/images/api-framwork-request-handling.png[API Framework Architecture]
+
+.Example AWS Lambda Deployment using API Framework
+image::./docs/images/aws-lambda-request-handling.png[AWS Lambda Architecture]
+
+== Getting Started
+
+- Project is built using https://vinscom.github.io/glue/[Glue] project
+- Getting Started with https://vinscom.github.io/api-framework-start/[API Framework]
