@@ -1,5 +1,7 @@
 package in.erail.route;
 
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Metered;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
 import com.google.common.base.Strings;
@@ -33,11 +35,12 @@ import java.util.HashMap;
 public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   private static final String AUTHORIZATION_PREFIX = "realm";
+  private static final String FAIL_SUFFIX = ".fail";
   private ServiceArray mServices;
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
-  private HashMap<String, Timer> mMetricTimers = new HashMap<>();
+  private HashMap<String, Metered> mMetrics = new HashMap<>();
   private MetricRegistry mMetricRegistry;
 
   public File getOpenAPI3File() {
@@ -64,16 +67,19 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .stream()
             .forEach((api) -> {
               RESTService service = (RESTService) api;
-              getMetricTimers().put(service.getServiceUniqueId(),
-                      getMetricRegistry().timer("api.framework.service." + service.getServiceUniqueId())
-              );
+              getMetrics()
+                      .put(service.getServiceUniqueId(),
+                              getMetricRegistry().timer("api.framework.service." + service.getServiceUniqueId()));
+              getMetrics()
+                      .put(service.getServiceUniqueId() + FAIL_SUFFIX,
+                              getMetricRegistry().meter("api.framework.service." + service.getServiceUniqueId() + FAIL_SUFFIX));
             });
 
   }
 
   public void process(RoutingContext pRequestContext, String pServiceUniqueId) {
 
-    Timer.Context timerCtx = getMetricTimers().get(pServiceUniqueId).time();
+    Timer.Context timerCtx = ((Timer) getMetrics().get(pServiceUniqueId)).time();
 
     getVertx()
             .eventBus()
@@ -85,6 +91,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                         JsonObject response = (JsonObject) reply.result().body();
                         buildResponseFromReply(response, pRequestContext).end();
                       } else {
+                        ((Meter) getMetrics().get(pServiceUniqueId + FAIL_SUFFIX)).mark();
                         getLog().error(() -> "Error in reply:" + reply.cause().toString());
                         pRequestContext
                                 .response()
@@ -238,12 +245,12 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     }
   }
 
-  public HashMap<String, Timer> getMetricTimers() {
-    return mMetricTimers;
+  public HashMap<String, Metered> getMetrics() {
+    return mMetrics;
   }
 
-  public void setMetricTimers(HashMap<String, Timer> pMetricTimers) {
-    this.mMetricTimers = pMetricTimers;
+  public void setMetrics(HashMap<String, Metered> pMetrics) {
+    this.mMetrics = pMetrics;
   }
 
   public MetricRegistry getMetricRegistry() {
