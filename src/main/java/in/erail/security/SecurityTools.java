@@ -115,7 +115,7 @@ public class SecurityTools {
   /**
    * Unique string across cluster. Changes on each restart of cluster.
    *
-   * @return
+   * @return Globally unique string
    */
   public String getGlobalUniqueString() {
     try {

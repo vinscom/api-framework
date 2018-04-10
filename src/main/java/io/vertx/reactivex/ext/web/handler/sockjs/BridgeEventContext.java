@@ -30,7 +30,7 @@ public class BridgeEventContext {
   /**
    * Unique event id set only during debug. And can be used for tracking
    * event
-   * @return 
+   * @return event id
    */
   public String getId() {
     return mId;
@@ -43,7 +43,7 @@ public class BridgeEventContext {
   /**
    * Unique Key can be used for referring this event in external system(Like Redis).
    * Key changes whenever whole cluster is restarted.
-   * @return 
+   * @return  address key
    */
   public String getAddressKey() {
     return mAddressKey;
