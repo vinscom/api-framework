@@ -32,6 +32,7 @@ public class RateLimiterProcessor implements BridgeEventProcessor {
   private int mMaximumSize = 50000;
   private int mExpireAfterAccess = 3600;
   private boolean mEnable = true;
+  private boolean mWarningOnly = true;
   private Logger mLog;
 
   @StartService
@@ -61,14 +62,16 @@ public class RateLimiterProcessor implements BridgeEventProcessor {
 
               Bucket bucket = getCache().get(eventType).get(ctx.getBridgeEvent().socket().writeHandlerID(), () -> {
                 Refill refill = Refill.smooth(getRateOfTokenFill().getOrDefault(eventType, getDefaultRateOfTokenFill()),
-                         Duration.ofSeconds(getRateOfTokenFillDuration().getOrDefault(eventType, getDefaultRateOfTokenFillDuration())));
+                        Duration.ofSeconds(getRateOfTokenFillDuration().getOrDefault(eventType, getDefaultRateOfTokenFillDuration())));
                 Bandwidth limit = Bandwidth.classic(getTokenBucketSize().getOrDefault(eventType, getDefaultTokenBucketSize()), refill);
                 return Bucket4j.builder().addLimit(limit).build();
               });
 
               if (!bucket.tryConsume(1)) {
-                getLog().debug(() -> String.format("[%s] Rate limit crossed for connection:[%s],event:[%s]", ctx.getId(), ctx.getBridgeEvent().socket().writeHandlerID(), eventType.toString()));
-                ctx.getBridgeEvent().fail("Rate Limit Crossed");
+                if (!isWarningOnly()) {
+                  ctx.getBridgeEvent().fail("Rate Limit Crossed");
+                }
+                getLog().warn(() -> String.format("[%s] Rate limit crossed for connection:[%s],event:[%s]", ctx.getId(), ctx.getBridgeEvent().socket().writeHandlerID(), eventType.toString()));
               }
 
               return ctx;
@@ -179,6 +182,14 @@ public class RateLimiterProcessor implements BridgeEventProcessor {
 
   public void setDefaultRateOfTokenFillDuration(int pDefaultRateOfTokenFillDuration) {
     this.mDefaultRateOfTokenFillDuration = pDefaultRateOfTokenFillDuration;
+  }
+
+  public boolean isWarningOnly() {
+    return mWarningOnly;
+  }
+
+  public void setWarningOnly(boolean pWarningOnly) {
+    this.mWarningOnly = pWarningOnly;
   }
 
 }
