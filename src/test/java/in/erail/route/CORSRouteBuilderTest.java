@@ -33,7 +33,7 @@ public class CORSRouteBuilderTest {
     server
             .getVertx()
             .createHttpClient()
-            .options(server.getPort(), server.getHost(), "/v1/broadcast/testTopic")
+            .options(server.getHttpServerOptions().getPort(), server.getHttpServerOptions().getHost(), "/v1/broadcast/testTopic")
             .putHeader("content-type", "application/json")
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
             .putHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")

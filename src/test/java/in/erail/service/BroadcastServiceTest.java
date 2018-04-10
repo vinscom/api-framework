@@ -45,7 +45,7 @@ public class BroadcastServiceTest {
     server
             .getVertx()
             .createHttpClient()
-            .post(server.getPort(), server.getHost(), "/v1/broadcast/testTopic")
+            .post(server.getHttpServerOptions().getPort(), server.getHttpServerOptions().getHost(), "/v1/broadcast/testTopic")
             .putHeader("content-type", MediaType.JSON_UTF_8.toString())
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
             .putHeader("content-length", Integer.toString(json.length()))

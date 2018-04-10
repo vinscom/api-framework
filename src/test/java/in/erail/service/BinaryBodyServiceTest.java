@@ -37,7 +37,7 @@ public class BinaryBodyServiceTest {
     server
             .getVertx()
             .createHttpClient()
-            .post(server.getPort(), server.getHost(), "/v1/broadcastv2/testTopic")
+            .post(server.getHttpServerOptions().getPort(), server.getHttpServerOptions().getHost(), "/v1/broadcastv2/testTopic")
             .putHeader("content-type", "application/json")
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
             .putHeader("content-length", Integer.toString(json.length()))
