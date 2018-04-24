@@ -2,7 +2,6 @@ package io.vertx.reactivex.ext.web.handler.sockjs;
 
 import com.codahale.metrics.Meter;
 import io.vertx.reactivex.ext.web.handler.sockjs.processor.BridgeEventProcessor;
-import in.erail.glue.component.ServiceArray;
 import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.vertx.core.Handler;
@@ -16,15 +15,15 @@ import org.apache.logging.log4j.Logger;
 public class BridgeEventHandler implements Handler<BridgeEvent> {
 
   private Logger mLog;
-  private ServiceArray mPublishProcessors;
-  private ServiceArray mReceiveProcessors;
-  private ServiceArray mRegisterProcessors;
-  private ServiceArray mSendProcessors;
-  private ServiceArray mSocketClosedProcessors;
-  private ServiceArray mSocketCreatedProcessors;
-  private ServiceArray mSocketIdleProcessors;
-  private ServiceArray mSoketPingProcessors;
-  private ServiceArray mUnregisterProcessors;
+  private BridgeEventProcessor[] mPublishProcessors;
+  private BridgeEventProcessor[] mReceiveProcessors;
+  private BridgeEventProcessor[] mRegisterProcessors;
+  private BridgeEventProcessor[] mSendProcessors;
+  private BridgeEventProcessor[] mSocketClosedProcessors;
+  private BridgeEventProcessor[] mSocketCreatedProcessors;
+  private BridgeEventProcessor[] mSocketIdleProcessors;
+  private BridgeEventProcessor[] mSoketPingProcessors;
+  private BridgeEventProcessor[] mUnregisterProcessors;
   private Meter mMetricsBridgeEventSend;
   private Meter mMetricsBridgeEventPublish;
   private Meter mMetricsBridgeEventReceive;
@@ -70,9 +69,9 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
     }
   }
 
-  protected void process(ServiceArray pProcessors, BridgeEvent pEvent) {
+  protected void process(BridgeEventProcessor[] pProcessors, BridgeEvent pEvent) {
 
-    if (pProcessors.getServices() == null || pProcessors.getServices().isEmpty()) {
+    if (pProcessors == null || pProcessors.length == 0) {
       pEvent.complete(true);
       return;
     }
@@ -85,11 +84,8 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
     }
 
     Observable
-            .fromIterable(pProcessors.getServices())
-            .reduce(Single.just(ctx), (acc, processor) -> {
-              BridgeEventProcessor p = (BridgeEventProcessor) processor;
-              return p.process(acc);
-            })
+            .fromArray(pProcessors)
+            .reduce(Single.just(ctx), (acc, processor) -> processor.process(acc))
             .flatMap((context) -> context)
             .doFinally(() -> {
               if (ctx.getBridgeEvent().failed()) {
@@ -103,75 +99,75 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
 
   }
 
-  public ServiceArray getPublishProcessors() {
+  public BridgeEventProcessor[] getPublishProcessors() {
     return mPublishProcessors;
   }
 
-  public void setPublishProcessors(ServiceArray pPublishProcessors) {
+  public void setPublishProcessors(BridgeEventProcessor[] pPublishProcessors) {
     this.mPublishProcessors = pPublishProcessors;
   }
 
-  public ServiceArray getReceiveProcessors() {
+  public BridgeEventProcessor[] getReceiveProcessors() {
     return mReceiveProcessors;
   }
 
-  public void setReceiveProcessors(ServiceArray pReceiveProcessors) {
+  public void setReceiveProcessors(BridgeEventProcessor[] pReceiveProcessors) {
     this.mReceiveProcessors = pReceiveProcessors;
   }
 
-  public ServiceArray getRegisterProcessors() {
+  public BridgeEventProcessor[] getRegisterProcessors() {
     return mRegisterProcessors;
   }
 
-  public void setRegisterProcessors(ServiceArray pRegisterProcessors) {
+  public void setRegisterProcessors(BridgeEventProcessor[] pRegisterProcessors) {
     this.mRegisterProcessors = pRegisterProcessors;
   }
 
-  public ServiceArray getSendProcessors() {
+  public BridgeEventProcessor[] getSendProcessors() {
     return mSendProcessors;
   }
 
-  public void setSendProcessors(ServiceArray pSendProcessors) {
+  public void setSendProcessors(BridgeEventProcessor[] pSendProcessors) {
     this.mSendProcessors = pSendProcessors;
   }
 
-  public ServiceArray getSocketClosedProcessors() {
+  public BridgeEventProcessor[] getSocketClosedProcessors() {
     return mSocketClosedProcessors;
   }
 
-  public void setSocketClosedProcessors(ServiceArray pSocketClosedProcessors) {
+  public void setSocketClosedProcessors(BridgeEventProcessor[] pSocketClosedProcessors) {
     this.mSocketClosedProcessors = pSocketClosedProcessors;
   }
 
-  public ServiceArray getSocketCreatedProcessors() {
+  public BridgeEventProcessor[] getSocketCreatedProcessors() {
     return mSocketCreatedProcessors;
   }
 
-  public void setSocketCreatedProcessors(ServiceArray pSocketCreatedProcessors) {
+  public void setSocketCreatedProcessors(BridgeEventProcessor[] pSocketCreatedProcessors) {
     this.mSocketCreatedProcessors = pSocketCreatedProcessors;
   }
 
-  public ServiceArray getSocketIdleProcessors() {
+  public BridgeEventProcessor[] getSocketIdleProcessors() {
     return mSocketIdleProcessors;
   }
 
-  public void setSocketIdleProcessors(ServiceArray pSocketIdleProcessors) {
+  public void setSocketIdleProcessors(BridgeEventProcessor[] pSocketIdleProcessors) {
     this.mSocketIdleProcessors = pSocketIdleProcessors;
   }
 
-  public ServiceArray getSoketPingProcessors() {
+  public BridgeEventProcessor[] getSoketPingProcessors() {
     return mSoketPingProcessors;
   }
 
-  public void setSoketPingProcessors(ServiceArray pSoketPingProcessors) {
+  public void setSoketPingProcessors(BridgeEventProcessor[] pSoketPingProcessors) {
     this.mSoketPingProcessors = pSoketPingProcessors;
   }
 
-  public ServiceArray getUnregisterProcessors() {
+  public BridgeEventProcessor[] getUnregisterProcessors() {
     return mUnregisterProcessors;
   }
 
-  public void setUnregisterProcessors(ServiceArray pUnregisterProcessors) {
+  public void setUnregisterProcessors(BridgeEventProcessor[] pUnregisterProcessors) {
     this.mUnregisterProcessors = pUnregisterProcessors;
   }
 

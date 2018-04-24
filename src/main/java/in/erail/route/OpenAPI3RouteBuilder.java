@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 
 import in.erail.common.FrameworkConstants;
 import in.erail.glue.annotation.StartService;
-import in.erail.glue.component.ServiceArray;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -26,7 +25,9 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Optional;
 
 /**
  *
@@ -36,7 +37,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   private static final String AUTHORIZATION_PREFIX = "realm";
   private static final String FAIL_SUFFIX = ".fail";
-  private ServiceArray mServices;
+  private RESTService[] mServices;
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
@@ -51,22 +52,20 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     this.mOpenAPI3File = pOpenAPI3File;
   }
 
-  public ServiceArray getServices() {
+  public RESTService[] getServices() {
     return mServices;
   }
 
-  public void setServices(ServiceArray pServices) {
+  public void setServices(RESTService[] pServices) {
     this.mServices = pServices;
   }
 
   @StartService
   public void start() {
 
-    getServices()
-            .getServices()
-            .stream()
-            .forEach((api) -> {
-              RESTService service = (RESTService) api;
+    Arrays
+            .stream(getServices())
+            .forEach((service) -> {
               getMetrics()
                       .put(service.getServiceUniqueId(),
                               getMetricRegistry().timer("api.framework.service." + service.getServiceUniqueId()));
@@ -193,35 +192,38 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .rxCreateRouterFactoryFromFile(getVertx(), getOpenAPI3File().getAbsolutePath())
             .blockingGet();
 
-    getServices()
-            .getServices()
-            .forEach((api) -> {
-              RESTService service = (RESTService) api;
+    Optional
+            .ofNullable(getServices())
+            .ifPresent(t -> {
+              Arrays
+                      .asList(t)
+                      .stream()
+                      .forEach((service) -> {
+                        apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
 
-              apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
+                          routingContext.put(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON, service.isBodyAsJson());
 
-                routingContext.put(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON, service.isBodyAsJson());
+                          if (isSecurityEnable()) {
 
-                if (isSecurityEnable()) {
+                            if (routingContext.user() == null) {
+                              routingContext.fail(401);
+                              return;
+                            }
 
-                  if (routingContext.user() == null) {
-                    routingContext.fail(401);
-                    return;
-                  }
-
-                  routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getOperationId(), (event) -> {
-                    boolean authSuccess = event.succeeded() ? event.result() : false;
-                    if (authSuccess) {
-                      process(routingContext, service.getServiceUniqueId());
-                    } else {
-                      routingContext.fail(401);
-                    }
-                  });
-                } else {
-                  getLog().warn("Security disabled for " + service.getServiceUniqueId());
-                  process(routingContext, service.getServiceUniqueId());
-                }
-              });
+                            routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getOperationId(), (event) -> {
+                              boolean authSuccess = event.succeeded() ? event.result() : false;
+                              if (authSuccess) {
+                                process(routingContext, service.getServiceUniqueId());
+                              } else {
+                                routingContext.fail(401);
+                              }
+                            });
+                          } else {
+                            getLog().warn("Security disabled for " + service.getServiceUniqueId());
+                            process(routingContext, service.getServiceUniqueId());
+                          }
+                        });
+                      });
             });
 
     return apiFactory.getRouter();
