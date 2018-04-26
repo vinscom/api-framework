@@ -22,11 +22,6 @@ public class FrameworkConstants {
       public static final String STATUS_CODE = "statusCode";
       public static final String IS_BASE64_ENCODED = "isBase64Encoded";
     }
-
-    public static class Attribute {
-
-      public static final String BODY_AS_JSON = "bodyAsJson";
-    }
   }
 
   public static class SockJS {

@@ -2,7 +2,6 @@ package in.erail.service;
 
 import in.erail.glue.Glue;
 import io.reactivex.Observable;
-import io.vertx.core.VertxInstance;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;

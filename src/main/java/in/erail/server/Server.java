@@ -25,6 +25,7 @@ public class Server {
   private Logger mLog;
   private SockJSHandler mSockJSHandler;
   private HttpServerOptions mHttpServerOptions;
+  private HttpServer mHttpServer;
 
   @StartService
   public void start() {
@@ -46,7 +47,7 @@ public class Server {
       router.mountSubRouter(mMountPath[i], mRouter[i]);
     }
 
-    server
+    mHttpServer = server
             .requestHandler(router::accept)
             .rxListen()
             .blockingGet();
@@ -104,6 +105,14 @@ public class Server {
 
   public void setHttpServerOptions(HttpServerOptions pHttpServerOptions) {
     this.mHttpServerOptions = pHttpServerOptions;
+  }
+
+  public HttpServer getHttpServer() {
+    return mHttpServer;
+  }
+
+  public void setHttpServer(HttpServer pHttpServer) {
+    this.mHttpServer = pHttpServer;
   }
 
 }
