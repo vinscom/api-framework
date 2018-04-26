@@ -13,7 +13,6 @@ import io.reactivex.Scheduler;
  */
 public abstract class RESTServiceImpl implements RESTService {
 
-  private boolean mBodyAsJson = true;
   private String mOperationId;
   private String mServiceUniqueId;
   private Vertx mVertx;
@@ -75,14 +74,6 @@ public abstract class RESTServiceImpl implements RESTService {
 
   public void setLog(Logger pLog) {
     this.mLog = pLog;
-  }
-
-  public boolean isBodyAsJson() {
-    return mBodyAsJson;
-  }
-
-  public void setBodyAsJson(boolean pBodyAsJson) {
-    this.mBodyAsJson = pBodyAsJson;
   }
 
   public Scheduler getScheduler() {

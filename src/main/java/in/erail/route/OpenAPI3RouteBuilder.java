@@ -4,7 +4,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import java.io.File;
@@ -25,6 +24,7 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
+import io.vertx.reactivex.core.buffer.Buffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
@@ -102,28 +102,20 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   }
 
+  /**
+   * In case of post request. Body is sent in binary
+   *
+   * @param pContext Routing Context
+   * @return JsonObject representing RoutingContext
+   */
   public JsonObject serialiseRoutingContext(RoutingContext pContext) {
 
     JsonObject result = new JsonObject();
 
     if (pContext.request().method() == HttpMethod.POST) {
-      boolean bodyAsJson = pContext.<Boolean>get(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON);
-      if (bodyAsJson) {
-        String mediaTypeHeader = pContext.request().headers().get(HttpHeaders.CONTENT_TYPE);
-        MediaType contentType;
-        if (Strings.isNullOrEmpty(mediaTypeHeader)) {
-          contentType = MediaType.JSON_UTF_8;
-        } else {
-          contentType = MediaType.parse(mediaTypeHeader);
-        }
-        if (MediaType.JSON_UTF_8.type().equals(contentType.type()) && MediaType.JSON_UTF_8.subtype().equals(contentType.subtype())) {
-          result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
-        }
-      } else {
-        result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBody().getDelegate().getBytes());
-      }
+      result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBody().getDelegate().getBytes());
     } else {
-      result.put(FrameworkConstants.RoutingContext.Json.BODY, new JsonObject());
+      result.put(FrameworkConstants.RoutingContext.Json.BODY, new byte[]{});
     }
 
     JsonObject headers = new JsonObject(convertMultiMapIntoMap(pContext.request().headers()));
@@ -140,13 +132,20 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     return result;
   }
 
+  /**
+   * All response content is written in binary. If Content type is not provided then application/octet-stream content type is set.
+   *
+   * @param pReplyResponse Service Body
+   * @param pContext Routing Context
+   * @return HttpServerResponse
+   */
   public HttpServerResponse buildResponseFromReply(JsonObject pReplyResponse, RoutingContext pContext) {
 
     JsonObject headers = pReplyResponse.getJsonObject(FrameworkConstants.RoutingContext.Json.HEADERS, new JsonObject());
     String statusCode = pReplyResponse.getString(FrameworkConstants.RoutingContext.Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
 
     if (!headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
-      headers.put(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
+      headers.put(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM.toString());
     }
 
     headers
@@ -158,13 +157,12 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     pContext.response().setStatusCode(HttpResponseStatus.parseLine(statusCode).code());
 
-    Object body = pReplyResponse.getMap().get(FrameworkConstants.RoutingContext.Json.BODY);
+    Optional<byte[]> body = Optional.ofNullable(pReplyResponse.getBinary(FrameworkConstants.RoutingContext.Json.BODY));
 
-    if (body != null) {
-      String bodyStr = body.toString();
-      pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(bodyStr.length()));
-      pContext.response().write(bodyStr);
-    }
+    body.ifPresent((t) -> {
+      pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(t.length));
+      pContext.response().write(Buffer.newInstance(io.vertx.core.buffer.Buffer.buffer(t)));
+    });
 
     return pContext.response();
   }
@@ -200,9 +198,6 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                       .stream()
                       .forEach((service) -> {
                         apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
-
-                          routingContext.put(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON, service.isBodyAsJson());
-
                           if (isSecurityEnable()) {
 
                             if (routingContext.user() == null) {
