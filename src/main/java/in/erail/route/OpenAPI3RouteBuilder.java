@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import in.erail.common.FrameworkConstants;
+import static in.erail.common.FrameworkConstants.RoutingContext.Json;
 import in.erail.glue.annotation.StartService;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -24,9 +24,14 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
+import io.vertx.core.json.JsonArray;
 import io.vertx.reactivex.core.buffer.Buffer;
+import io.vertx.reactivex.ext.web.Cookie;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -113,19 +118,19 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     JsonObject result = new JsonObject();
 
     if (pContext.request().method() == HttpMethod.POST) {
-      result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBody().getDelegate().getBytes());
+      result.put(Json.BODY, pContext.getBody().getDelegate().getBytes());
     } else {
-      result.put(FrameworkConstants.RoutingContext.Json.BODY, new byte[]{});
+      result.put(Json.BODY, new byte[]{});
     }
 
     JsonObject headers = new JsonObject(convertMultiMapIntoMap(pContext.request().headers()));
-    result.put(FrameworkConstants.RoutingContext.Json.HEADERS, headers);
+    result.put(Json.HEADERS, headers);
 
     JsonObject query = new JsonObject(convertMultiMapIntoMap(pContext.queryParams()));
-    result.put(FrameworkConstants.RoutingContext.Json.QUERY_STRING_PARAM, query);
+    result.put(Json.QUERY_STRING_PARAM, query);
 
     JsonObject params = new JsonObject(convertMultiMapIntoMap(pContext.request().params()));
-    result.put(FrameworkConstants.RoutingContext.Json.PATH_PARAM, params);
+    result.put(Json.PATH_PARAM, params);
 
     getLog().debug(() -> "Context to JSON:" + result.toString());
 
@@ -141,8 +146,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
    */
   public HttpServerResponse buildResponseFromReply(JsonObject pReplyResponse, RoutingContext pContext) {
 
-    JsonObject headers = pReplyResponse.getJsonObject(FrameworkConstants.RoutingContext.Json.HEADERS, new JsonObject());
-    String statusCode = pReplyResponse.getString(FrameworkConstants.RoutingContext.Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
+    JsonObject headers = pReplyResponse.getJsonObject(Json.HEADERS, new JsonObject());
+    String statusCode = pReplyResponse.getString(Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
 
     if (!headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
       headers.put(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM.toString());
@@ -157,7 +162,26 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     pContext.response().setStatusCode(HttpResponseStatus.parseLine(statusCode).code());
 
-    Optional<byte[]> body = Optional.ofNullable(pReplyResponse.getBinary(FrameworkConstants.RoutingContext.Json.BODY));
+    Optional<JsonArray> cookies = Optional.ofNullable(pReplyResponse.getJsonArray(Json.COOKIES));
+
+    cookies.ifPresent((cooky) -> {
+      for (Iterator<Object> iterator = cooky.iterator(); iterator.hasNext();) {
+        JsonObject next = (JsonObject) iterator.next();
+        Optional cookieName = Optional.ofNullable(next.getString(Json.Cookie.NAME));
+        if (cookieName.isPresent()) {
+          Cookie c = Cookie.cookie((String) cookieName.get(), "");
+          Optional.ofNullable(next.getString(Json.Cookie.VALUE)).ifPresent(t -> c.setValue(t));
+          Optional.ofNullable(next.getString(Json.Cookie.PATH)).ifPresent(t -> c.setPath(t));
+          Optional.ofNullable(next.getDouble(Json.Cookie.MAX_AGE)).ifPresent(t -> c.setMaxAge(t.longValue()));
+          Optional.ofNullable(next.getString(Json.Cookie.DOMAIN)).ifPresent(t -> c.setDomain(t));
+          Optional.ofNullable(next.getBoolean(Json.Cookie.SECURE)).ifPresent(t -> c.setSecure(t));
+          Optional.ofNullable(next.getBoolean(Json.Cookie.HTTP_ONLY)).ifPresent(t -> c.setHttpOnly(t));
+          pContext.addCookie(c);
+        }
+      }
+    });
+
+    Optional<byte[]> body = Optional.ofNullable(pReplyResponse.getBinary(Json.BODY));
 
     body.ifPresent((t) -> {
       pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(t.length));

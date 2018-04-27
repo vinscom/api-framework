@@ -15,6 +15,19 @@ public class FrameworkConstants {
 
     public static class Json {
 
+      public static final String COOKIES = "cookies";
+
+      public static class Cookie {
+
+        public static final String NAME = "name";
+        public static final String VALUE = "value";
+        public static final String HTTP_ONLY = "httpOnly";
+        public static final String SECURE = "secure";
+        public static final String PATH = "path";
+        public static final String MAX_AGE = "maxAge";
+        public static final String DOMAIN = "domain";
+      }
+
       public static final String HEADERS = "headers";
       public static final String PATH_PARAM = "pathParameters";
       public static final String QUERY_STRING_PARAM = "queryStringParameters";
