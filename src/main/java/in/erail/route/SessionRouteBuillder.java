@@ -14,6 +14,7 @@ import io.vertx.reactivex.ext.web.sstore.SessionStore;
 public class SessionRouteBuillder extends AbstractRouterBuilderImpl {
 
   private SessionStore mSessionStore;
+  private boolean mEnableSession = false;
 
   public SessionStore getSessionStore() {
     return mSessionStore;
@@ -28,8 +29,18 @@ public class SessionRouteBuillder extends AbstractRouterBuilderImpl {
     Route route = pRouter.route();
     route.handler(BodyHandler.create());
     route.handler(CookieHandler.create());
-    route.handler(SessionHandler.create(getSessionStore()));
+    if (isEnableSession()) {
+      route.handler(SessionHandler.create(getSessionStore()));
+    }
     return pRouter;
+  }
+
+  public boolean isEnableSession() {
+    return mEnableSession;
+  }
+
+  public void setEnableSession(boolean pEnableSession) {
+    this.mEnableSession = pEnableSession;
   }
 
 }
