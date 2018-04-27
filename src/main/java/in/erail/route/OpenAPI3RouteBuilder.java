@@ -27,11 +27,9 @@ import in.erail.service.RESTService;
 import io.vertx.core.json.JsonArray;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.Cookie;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Optional;
 
 /**
@@ -181,7 +179,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
       }
     });
 
-    Optional<byte[]> body = Optional.ofNullable(pReplyResponse.getBinary(Json.BODY));
+    Optional<byte[]> body;
+
+    try {
+      body = Optional.ofNullable(pReplyResponse.getBinary(Json.BODY));
+    } catch (IllegalArgumentException e) {
+      getLog().error(() -> "Could not get message body as binary. Please check if service is sending body in binary." + pContext.request().absoluteURI() + ":" + e.toString());
+      body = Optional.empty();
+    }
 
     body.ifPresent((t) -> {
       pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(t.length));
