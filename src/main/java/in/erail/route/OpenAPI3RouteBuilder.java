@@ -4,7 +4,6 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
-import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import java.io.File;
@@ -12,9 +11,8 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import in.erail.common.FrameworkConstants;
+import static in.erail.common.FrameworkConstants.RoutingContext.Json;
 import in.erail.glue.annotation.StartService;
-import in.erail.glue.component.ServiceArray;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -26,7 +24,13 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
+import io.vertx.core.json.JsonArray;
+import io.vertx.reactivex.core.buffer.Buffer;
+import io.vertx.reactivex.ext.web.Cookie;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Optional;
 
 /**
  *
@@ -36,7 +40,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   private static final String AUTHORIZATION_PREFIX = "realm";
   private static final String FAIL_SUFFIX = ".fail";
-  private ServiceArray mServices;
+  private RESTService[] mServices;
   private File mOpenAPI3File;
   private DeliveryOptions mDeliveryOptions;
   private boolean mSecurityEnable = true;
@@ -51,22 +55,20 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     this.mOpenAPI3File = pOpenAPI3File;
   }
 
-  public ServiceArray getServices() {
+  public RESTService[] getServices() {
     return mServices;
   }
 
-  public void setServices(ServiceArray pServices) {
+  public void setServices(RESTService[] pServices) {
     this.mServices = pServices;
   }
 
   @StartService
   public void start() {
 
-    getServices()
-            .getServices()
-            .stream()
-            .forEach((api) -> {
-              RESTService service = (RESTService) api;
+    Arrays
+            .stream(getServices())
+            .forEach((service) -> {
               getMetrics()
                       .put(service.getServiceUniqueId(),
                               getMetricRegistry().timer("api.framework.service." + service.getServiceUniqueId()));
@@ -103,51 +105,50 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   }
 
+  /**
+   * In case of post request. Body is sent in binary
+   *
+   * @param pContext Routing Context
+   * @return JsonObject representing RoutingContext
+   */
   public JsonObject serialiseRoutingContext(RoutingContext pContext) {
 
     JsonObject result = new JsonObject();
 
     if (pContext.request().method() == HttpMethod.POST) {
-      boolean bodyAsJson = pContext.<Boolean>get(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON);
-      if (bodyAsJson) {
-        String mediaTypeHeader = pContext.request().headers().get(HttpHeaders.CONTENT_TYPE);
-        MediaType contentType;
-        if (Strings.isNullOrEmpty(mediaTypeHeader)) {
-          contentType = MediaType.JSON_UTF_8;
-        } else {
-          contentType = MediaType.parse(mediaTypeHeader);
-        }
-        if (MediaType.JSON_UTF_8.type().equals(contentType.type()) && MediaType.JSON_UTF_8.subtype().equals(contentType.subtype())) {
-          result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBodyAsJson());
-        }
-      } else {
-        result.put(FrameworkConstants.RoutingContext.Json.BODY, pContext.getBody().getDelegate().getBytes());
-      }
+      result.put(Json.BODY, pContext.getBody().getDelegate().getBytes());
     } else {
-      result.put(FrameworkConstants.RoutingContext.Json.BODY, new JsonObject());
+      result.put(Json.BODY, new byte[]{});
     }
 
     JsonObject headers = new JsonObject(convertMultiMapIntoMap(pContext.request().headers()));
-    result.put(FrameworkConstants.RoutingContext.Json.HEADERS, headers);
+    result.put(Json.HEADERS, headers);
 
     JsonObject query = new JsonObject(convertMultiMapIntoMap(pContext.queryParams()));
-    result.put(FrameworkConstants.RoutingContext.Json.QUERY_STRING_PARAM, query);
+    result.put(Json.QUERY_STRING_PARAM, query);
 
     JsonObject params = new JsonObject(convertMultiMapIntoMap(pContext.request().params()));
-    result.put(FrameworkConstants.RoutingContext.Json.PATH_PARAM, params);
+    result.put(Json.PATH_PARAM, params);
 
     getLog().debug(() -> "Context to JSON:" + result.toString());
 
     return result;
   }
 
+  /**
+   * All response content is written in binary. If Content type is not provided then application/octet-stream content type is set.
+   *
+   * @param pReplyResponse Service Body
+   * @param pContext Routing Context
+   * @return HttpServerResponse
+   */
   public HttpServerResponse buildResponseFromReply(JsonObject pReplyResponse, RoutingContext pContext) {
 
-    JsonObject headers = pReplyResponse.getJsonObject(FrameworkConstants.RoutingContext.Json.HEADERS, new JsonObject());
-    String statusCode = pReplyResponse.getString(FrameworkConstants.RoutingContext.Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
+    JsonObject headers = pReplyResponse.getJsonObject(Json.HEADERS, new JsonObject());
+    String statusCode = pReplyResponse.getString(Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
 
     if (!headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
-      headers.put(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString());
+      headers.put(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM.toString());
     }
 
     headers
@@ -159,13 +160,38 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     pContext.response().setStatusCode(HttpResponseStatus.parseLine(statusCode).code());
 
-    Object body = pReplyResponse.getMap().get(FrameworkConstants.RoutingContext.Json.BODY);
+    Optional<JsonArray> cookies = Optional.ofNullable(pReplyResponse.getJsonArray(Json.COOKIES));
 
-    if (body != null) {
-      String bodyStr = body.toString();
-      pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(bodyStr.length()));
-      pContext.response().write(bodyStr);
+    cookies.ifPresent((cooky) -> {
+      for (Iterator<Object> iterator = cooky.iterator(); iterator.hasNext();) {
+        JsonObject next = (JsonObject) iterator.next();
+        Optional cookieName = Optional.ofNullable(next.getString(Json.Cookie.NAME));
+        if (cookieName.isPresent()) {
+          Cookie c = Cookie.cookie((String) cookieName.get(), "");
+          Optional.ofNullable(next.getString(Json.Cookie.VALUE)).ifPresent(t -> c.setValue(t));
+          Optional.ofNullable(next.getString(Json.Cookie.PATH)).ifPresent(t -> c.setPath(t));
+          Optional.ofNullable(next.getDouble(Json.Cookie.MAX_AGE)).ifPresent(t -> c.setMaxAge(t.longValue()));
+          Optional.ofNullable(next.getString(Json.Cookie.DOMAIN)).ifPresent(t -> c.setDomain(t));
+          Optional.ofNullable(next.getBoolean(Json.Cookie.SECURE)).ifPresent(t -> c.setSecure(t));
+          Optional.ofNullable(next.getBoolean(Json.Cookie.HTTP_ONLY)).ifPresent(t -> c.setHttpOnly(t));
+          pContext.addCookie(c);
+        }
+      }
+    });
+
+    Optional<byte[]> body;
+
+    try {
+      body = Optional.ofNullable(pReplyResponse.getBinary(Json.BODY));
+    } catch (IllegalArgumentException e) {
+      getLog().error(() -> "Could not get message body as binary. Please check if service is sending body in binary." + pContext.request().absoluteURI() + ":" + e.toString());
+      body = Optional.empty();
     }
+
+    body.ifPresent((t) -> {
+      pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(t.length));
+      pContext.response().write(Buffer.newInstance(io.vertx.core.buffer.Buffer.buffer(t)));
+    });
 
     return pContext.response();
   }
@@ -193,35 +219,35 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .rxCreateRouterFactoryFromFile(getVertx(), getOpenAPI3File().getAbsolutePath())
             .blockingGet();
 
-    getServices()
-            .getServices()
-            .forEach((api) -> {
-              RESTService service = (RESTService) api;
+    Optional
+            .ofNullable(getServices())
+            .ifPresent(t -> {
+              Arrays
+                      .asList(t)
+                      .stream()
+                      .forEach((service) -> {
+                        apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
+                          if (isSecurityEnable()) {
 
-              apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
+                            if (routingContext.user() == null) {
+                              routingContext.fail(401);
+                              return;
+                            }
 
-                routingContext.put(FrameworkConstants.RoutingContext.Attribute.BODY_AS_JSON, service.isBodyAsJson());
-
-                if (isSecurityEnable()) {
-
-                  if (routingContext.user() == null) {
-                    routingContext.fail(401);
-                    return;
-                  }
-
-                  routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getOperationId(), (event) -> {
-                    boolean authSuccess = event.succeeded() ? event.result() : false;
-                    if (authSuccess) {
-                      process(routingContext, service.getServiceUniqueId());
-                    } else {
-                      routingContext.fail(401);
-                    }
-                  });
-                } else {
-                  getLog().warn("Security disabled for " + service.getServiceUniqueId());
-                  process(routingContext, service.getServiceUniqueId());
-                }
-              });
+                            routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getOperationId(), (event) -> {
+                              boolean authSuccess = event.succeeded() ? event.result() : false;
+                              if (authSuccess) {
+                                process(routingContext, service.getServiceUniqueId());
+                              } else {
+                                routingContext.fail(401);
+                              }
+                            });
+                          } else {
+                            getLog().warn("Security disabled for " + service.getServiceUniqueId());
+                            process(routingContext, service.getServiceUniqueId());
+                          }
+                        });
+                      });
             });
 
     return apiFactory.getRouter();

@@ -5,6 +5,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
 import org.apache.logging.log4j.Logger;
 import in.erail.glue.annotation.StartService;
+import io.reactivex.Scheduler;
 
 /**
  *
@@ -12,12 +13,12 @@ import in.erail.glue.annotation.StartService;
  */
 public abstract class RESTServiceImpl implements RESTService {
 
-  private boolean mBodyAsJson = true;
   private String mOperationId;
   private String mServiceUniqueId;
   private Vertx mVertx;
   private boolean mEnable = false;
   private Logger mLog;
+  private Scheduler mScheduler = Schedulers.io();
 
   @StartService
   public void start() {
@@ -26,7 +27,7 @@ public abstract class RESTServiceImpl implements RESTService {
               .eventBus()
               .<JsonObject>consumer(getServiceUniqueId())
               .toFlowable()
-              .subscribeOn(Schedulers.io())
+              .subscribeOn(getScheduler())
               .doOnSubscribe((s) -> getLog().info(() -> String.format("%s[%s] service started", getServiceUniqueId(), Thread.currentThread().getName())))
               .doOnTerminate(() -> getLog().info(() -> String.format("%s[%s] service stopped", getServiceUniqueId(), Thread.currentThread().getName())))
               .subscribe(this::process, err -> getLog().error(() -> String.format("Process exception:[%s],Error:[%s]", getServiceUniqueId(), err)));
@@ -75,12 +76,12 @@ public abstract class RESTServiceImpl implements RESTService {
     this.mLog = pLog;
   }
 
-  public boolean isBodyAsJson() {
-    return mBodyAsJson;
+  public Scheduler getScheduler() {
+    return mScheduler;
   }
 
-  public void setBodyAsJson(boolean pBodyAsJson) {
-    this.mBodyAsJson = pBodyAsJson;
+  public void setScheduler(Scheduler pScheduler) {
+    this.mScheduler = pScheduler;
   }
 
 }
