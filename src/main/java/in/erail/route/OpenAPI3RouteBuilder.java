@@ -247,6 +247,13 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                             process(routingContext, service.getServiceUniqueId());
                           }
                         });
+                        
+                        apiFactory.addFailureHandlerByOperationId(service.getOperationId(),(routingContext) -> {
+                            routingContext
+                                .response()
+                                .setStatusCode(400)
+                                .end(routingContext.failure().toString());
+                        });
                       });
             });
 

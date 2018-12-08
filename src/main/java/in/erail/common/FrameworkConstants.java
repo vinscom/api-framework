@@ -29,6 +29,7 @@ public class FrameworkConstants {
       }
 
       public static final String HEADERS = "headers";
+      public static final String MULTI_VALUE_HEADERS = "multiValueHeaders";
       public static final String PATH_PARAM = "pathParameters";
       public static final String QUERY_STRING_PARAM = "queryStringParameters";
       public static final String BODY = "body";
