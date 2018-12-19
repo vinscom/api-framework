@@ -8,6 +8,8 @@ import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.Message;
 import static in.erail.common.FrameworkConstants.RoutingContext.*;
+import in.erail.model.ReqestEvent;
+import in.erail.model.ResponseEvent;
 
 /**
  *
@@ -17,26 +19,24 @@ public class BinaryBodyService extends RESTServiceImpl{
 
   @Override
   public void process(Message<JsonObject> pMessage) {
-    JsonObject param = pMessage.body().getJsonObject(Json.PATH_PARAM);
-    String topicName = param.getString(TestConstants.Service.Broadcast.APIMessage.PARAM_TOPIC_NAME);
-
+    
+    ReqestEvent request = pMessage.body().mapTo(ReqestEvent.class);
+    
+    String topicName = request.getPathParameters().get(TestConstants.Service.Broadcast.APIMessage.PARAM_TOPIC_NAME);
+    
     if(Strings.isNullOrEmpty(topicName)){
       pMessage.fail(0, "Empty Topic Name");
     }
 
-    JsonObject headers = new JsonObject();
-    headers.put(HttpHeaders.CONTENT_TYPE, MediaType.PLAIN_TEXT_UTF_8.toString());
+    ResponseEvent response = new ResponseEvent();
+    response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.PLAIN_TEXT_UTF_8);
     
-    byte[] body = pMessage.body().getBinary(Json.BODY);
-    JsonObject jsonBody = new JsonObject(Buffer.buffer(body));
+    JsonObject jsonBody = new JsonObject(Buffer.buffer(request.getBody()));
     
     String bodyContent = jsonBody.getString("data");
+    response.setBody(bodyContent.getBytes());
     
-    JsonObject resp = new JsonObject();
-    resp.put(Json.BODY, bodyContent.getBytes());
-    resp.put(Json.HEADERS, headers);
-    
-    pMessage.reply(resp);
+    pMessage.reply(JsonObject.mapFrom(response));
   }
   
 }

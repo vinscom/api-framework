@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 
 import static in.erail.common.FrameworkConstants.RoutingContext.Json;
 import in.erail.glue.annotation.StartService;
+import in.erail.model.ReqestEvent;
+import in.erail.model.ResponseEvent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -113,22 +115,20 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
    */
   public JsonObject serialiseRoutingContext(RoutingContext pContext) {
 
-    JsonObject result = new JsonObject();
+    ReqestEvent request = new ReqestEvent();
+    request.setHttpMethod(pContext.request().method());
 
-    if (pContext.request().method() == HttpMethod.POST) {
-      result.put(Json.BODY, pContext.getBody().getDelegate().getBytes());
-    } else {
-      result.put(Json.BODY, new byte[]{});
+    if (request.getHttpMethod() == HttpMethod.POST
+            || request.getHttpMethod() == HttpMethod.PUT
+            || request.getHttpMethod() == HttpMethod.PATCH) {
+      request.setBody(pContext.getBody().getDelegate().getBytes());
     }
 
-    JsonObject headers = new JsonObject(convertMultiMapIntoMap(pContext.request().headers()));
-    result.put(Json.HEADERS, headers);
+    request.setHeaders(convertMultiMapIntoMap(pContext.request().headers()));
+    request.setQueryStringParameters(convertMultiMapIntoMap(pContext.queryParams()));
+    request.setPathParameters(convertMultiMapIntoMap(pContext.request().params()));
 
-    JsonObject query = new JsonObject(convertMultiMapIntoMap(pContext.queryParams()));
-    result.put(Json.QUERY_STRING_PARAM, query);
-
-    JsonObject params = new JsonObject(convertMultiMapIntoMap(pContext.request().params()));
-    result.put(Json.PATH_PARAM, params);
+    JsonObject result = JsonObject.mapFrom(request);
 
     getLog().debug(() -> "Context to JSON:" + result.toString());
 
@@ -136,7 +136,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   }
 
   /**
-   * All response content is written in binary. If Content type is not provided then application/octet-stream content type is set.
+   * All response content is written in binary. If Content type is not provided
+   * then application/octet-stream content type is set.
    *
    * @param pReplyResponse Service Body
    * @param pContext Routing Context
@@ -144,49 +145,44 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
    */
   public HttpServerResponse buildResponseFromReply(JsonObject pReplyResponse, RoutingContext pContext) {
 
-    JsonObject headers = pReplyResponse.getJsonObject(Json.HEADERS, new JsonObject());
-    String statusCode = pReplyResponse.getString(Json.STATUS_CODE, HttpResponseStatus.OK.codeAsText().toString());
+    ResponseEvent response = pReplyResponse.mapTo(ResponseEvent.class);
 
-    if (!headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
-      headers.put(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM.toString());
+    if (!response.getHeaders().containsKey(HttpHeaders.CONTENT_TYPE)) {
+      response.getHeaders().put(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM.toString());
     }
 
-    headers
-            .fieldNames()
+    response
+            .getHeaders()
+            .entrySet()
             .stream()
-            .forEach((field) -> {
-              pContext.response().putHeader(field, headers.getString(field, ""));
+            .forEach((kv) -> {
+              pContext.response().putHeader(kv.getKey(), kv.getValue());
             });
 
-    pContext.response().setStatusCode(HttpResponseStatus.parseLine(statusCode).code());
+    pContext.response().setStatusCode(response.getStatusCode());
 
-    Optional<JsonArray> cookies = Optional.ofNullable(pReplyResponse.getJsonArray(Json.COOKIES));
+    Map<String,String>[] cookies = Optional.ofNullable(response.getCookies()).orElse(new Map[0]);
 
-    cookies.ifPresent((cooky) -> {
-      for (Iterator<Object> iterator = cooky.iterator(); iterator.hasNext();) {
-        JsonObject next = (JsonObject) iterator.next();
-        Optional cookieName = Optional.ofNullable(next.getString(Json.Cookie.NAME));
-        if (cookieName.isPresent()) {
-          Cookie c = Cookie.cookie((String) cookieName.get(), "");
-          Optional.ofNullable(next.getString(Json.Cookie.VALUE)).ifPresent(t -> c.setValue(t));
-          Optional.ofNullable(next.getString(Json.Cookie.PATH)).ifPresent(t -> c.setPath(t));
-          Optional.ofNullable(next.getDouble(Json.Cookie.MAX_AGE)).ifPresent(t -> c.setMaxAge(t.longValue()));
-          Optional.ofNullable(next.getString(Json.Cookie.DOMAIN)).ifPresent(t -> c.setDomain(t));
-          Optional.ofNullable(next.getBoolean(Json.Cookie.SECURE)).ifPresent(t -> c.setSecure(t));
-          Optional.ofNullable(next.getBoolean(Json.Cookie.HTTP_ONLY)).ifPresent(t -> c.setHttpOnly(t));
-          pContext.addCookie(c);
-        }
-      }
-    });
+    Arrays
+            .stream(cookies)
+            .map((t) -> {
+              Optional cookieName = Optional.ofNullable(t.get(Json.Cookie.NAME));
+              if (cookieName.isPresent()) {
+                Cookie c = Cookie.cookie((String) cookieName.get(), "");
+                Optional.ofNullable(t.get(Json.Cookie.VALUE)).ifPresent(v -> c.setValue(v));
+                Optional.ofNullable(t.get(Json.Cookie.PATH)).ifPresent(v -> c.setPath(v));
+                Optional.ofNullable(t.get(Json.Cookie.MAX_AGE)).ifPresent(v -> c.setMaxAge(Long.parseLong(v)));
+                Optional.ofNullable(t.get(Json.Cookie.DOMAIN)).ifPresent(v -> c.setDomain(v));
+                Optional.ofNullable(t.get(Json.Cookie.SECURE)).ifPresent(v -> c.setSecure(Boolean.parseBoolean(v)));
+                Optional.ofNullable(t.get(Json.Cookie.HTTP_ONLY)).ifPresent(v -> c.setHttpOnly(Boolean.parseBoolean(v)));
+                return Optional.of(c);
+              }
+              return Optional.<Cookie>empty();
+            })
+            .filter(t -> t.isPresent())
+            .forEach(t -> pContext.addCookie(t.get()));
 
-    Optional<byte[]> body;
-
-    try {
-      body = Optional.ofNullable(pReplyResponse.getBinary(Json.BODY));
-    } catch (IllegalArgumentException e) {
-      getLog().error(() -> "Could not get message body as binary. Please check if service is sending body in binary." + pContext.request().absoluteURI() + ":" + e.toString());
-      body = Optional.empty();
-    }
+    Optional<byte[]> body = Optional.ofNullable(response.getBody());
 
     body.ifPresent((t) -> {
       pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(t.length));
@@ -196,7 +192,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     return pContext.response();
   }
 
-  public Map<String, Object> convertMultiMapIntoMap(MultiMap pMultiMap) {
+  public Map<String, String> convertMultiMapIntoMap(MultiMap pMultiMap) {
     return pMultiMap
             .getDelegate()
             .entries()
@@ -247,12 +243,12 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                             process(routingContext, service.getServiceUniqueId());
                           }
                         });
-                        
-                        apiFactory.addFailureHandlerByOperationId(service.getOperationId(),(routingContext) -> {
-                            routingContext
-                                .response()
-                                .setStatusCode(400)
-                                .end(routingContext.failure().toString());
+
+                        apiFactory.addFailureHandlerByOperationId(service.getOperationId(), (routingContext) -> {
+                          routingContext
+                                  .response()
+                                  .setStatusCode(400)
+                                  .end(routingContext.failure().toString());
                         });
                       });
             });
