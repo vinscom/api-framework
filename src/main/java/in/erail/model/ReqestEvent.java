@@ -22,7 +22,8 @@ public class ReqestEvent {
   private Map<String, String[]> mMultiValueQueryStringParameters;
   private Map<String, String> mPathParameters;
   private Map<String, String> mStageVariables;
-  private Map mRequestContext;
+  @SuppressWarnings("rawtypes")
+	private Map mRequestContext;
   private byte[] mBody = new byte[0];
   private boolean mIsBase64Encoded = false;
 
@@ -98,11 +99,13 @@ public class ReqestEvent {
     this.mStageVariables = pStageVariables;
   }
 
-  public Map getRequestContext() {
+  @SuppressWarnings("rawtypes")
+	public Map getRequestContext() {
     return mRequestContext;
   }
 
-  public void setRequestContext(Map pRequestContext) {
+  @SuppressWarnings("rawtypes")
+	public void setRequestContext(Map pRequestContext) {
     this.mRequestContext = pRequestContext;
   }
 

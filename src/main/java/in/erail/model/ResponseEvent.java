@@ -1,9 +1,14 @@
 package in.erail.model;
 
+import com.google.common.base.Preconditions;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
+import io.vertx.reactivex.core.MultiMap;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  *
@@ -14,9 +19,13 @@ public class ResponseEvent {
   private Map<String, String>[] mCookies;
   private boolean mIsBase64Encoded = true;
   private int mStatusCode = 200;
-  private Map<String, String> mHeaders;
-  private Map<String, String[]> mMultiValueHeaders;
+  private MultiMap mMultiValueHeaders;
   private byte[] mBody = new byte[0];
+
+  public ResponseEvent() {
+    mMultiValueHeaders = MultiMap.caseInsensitiveMultiMap();
+    mMultiValueHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.JAVASCRIPT_UTF_8.toString());
+  }
 
   public boolean isIsBase64Encoded() {
     return mIsBase64Encoded;
@@ -34,34 +43,12 @@ public class ResponseEvent {
     this.mStatusCode = pStatusCode;
   }
 
-  public Map<String, String> getHeaders() {
-    if (mHeaders == null) {
-      mHeaders = new HashMap<>();
-    }
-    return mHeaders;
-  }
-
-  public void setHeaders(Map<String, String> pHeaders) {
-    this.mHeaders = pHeaders;
-  }
-
   public byte[] getBody() {
     return mBody;
   }
 
   public void setBody(byte[] pBody) {
     this.mBody = pBody;
-  }
-
-  public Map<String, String[]> getMultiValueHeaders() {
-    if (mMultiValueHeaders == null) {
-      mMultiValueHeaders = new HashMap<>();
-    }
-    return mMultiValueHeaders;
-  }
-
-  public void setMultiValueHeaders(Map<String, String[]> pMultiValueHeaders) {
-    this.mMultiValueHeaders = pMultiValueHeaders;
   }
 
   public Map<String, String>[] getCookies() {
@@ -72,11 +59,102 @@ public class ResponseEvent {
     this.mCookies = pCookies;
   }
 
+  public void setMultiValueHeaders(Map<String, String[]> pValue) {
+    Preconditions.checkNotNull(pValue);
+
+    if (pValue.isEmpty()) {
+      return;
+    }
+
+    mMultiValueHeaders
+            = pValue
+                    .entrySet()
+                    .stream()
+                    .reduce(MultiMap.caseInsensitiveMultiMap(), (a, v) -> {
+                      Optional
+                              .ofNullable(v.getValue())
+                              .map(t -> Arrays.stream(t))
+                              .orElse(Arrays.stream(new String[0]))
+                              .forEach((t) -> a.add(v.getKey(), t));
+                      return a;
+                    }, (a, b) -> {
+                      a.addAll(b);
+                      return a;
+                    });
+  }
+
+  public Map<String, String[]> getMultiValueHeaders() {
+
+    Map<String, String[]> result
+            = mMultiValueHeaders
+                    .names()
+                    .stream()
+                    .reduce(new HashMap<>(), (a, v) -> {
+                      a.put(v, mMultiValueHeaders.getAll(v).toArray(new String[0]));
+                      return a;
+                    }, (a, b) -> {
+                      a.putAll(b);
+                      return a;
+                    });
+
+    return Collections.unmodifiableMap(result);
+  }
+
+  public void setHeaders(Map<String, String> pValue) {
+    Preconditions.checkNotNull(pValue);
+
+    if (pValue.isEmpty()) {
+      return;
+    }
+
+    mMultiValueHeaders
+            = pValue
+                    .entrySet()
+                    .stream()
+                    .reduce(MultiMap.caseInsensitiveMultiMap(), (a, v) -> {
+                      Optional
+                              .ofNullable(v.getValue())
+                              .ifPresent(t -> a.add(v.getKey(), t));
+                      return a;
+                    }, (a, b) -> {
+                      a.addAll(b);
+                      return a;
+                    });
+  }
+
+  public Map<String, String> getHeaders() {
+
+    Map<String, String> result
+            = mMultiValueHeaders
+                    .names()
+                    .stream()
+                    .reduce(new HashMap<>(), (a, v) -> {
+                      a.put(v, mMultiValueHeaders.get(v));
+                      return a;
+                    }, (a, b) -> {
+                      a.putAll(b);
+                      return a;
+                    });
+
+    return Collections.unmodifiableMap(result);
+  }
+
+  public void setContentType(String pContentType) {
+    if (mMultiValueHeaders.contains(HttpHeaders.CONTENT_TYPE)) {
+      mMultiValueHeaders.remove(HttpHeaders.CONTENT_TYPE);
+    }
+    mMultiValueHeaders.add(HttpHeaders.CONTENT_TYPE, pContentType);
+  }
+
+  public void setContentType(MediaType pMediaType) {
+    setContentType(pMediaType.toString());
+  }
+
   public void addHeader(String pHeaderName, String pMediaType) {
-    getHeaders().put(HttpHeaders.CONTENT_TYPE, pMediaType);
+    mMultiValueHeaders.add(HttpHeaders.CONTENT_TYPE, pMediaType);
   }
 
   public void addHeader(String pHeaderName, MediaType pMediaType) {
-    getHeaders().put(HttpHeaders.CONTENT_TYPE, pMediaType.toString());
+    addHeader(HttpHeaders.CONTENT_TYPE, pMediaType.toString());
   }
 }
