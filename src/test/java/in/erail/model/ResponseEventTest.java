@@ -1,8 +1,8 @@
 package in.erail.model;
 
-import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
-import org.junit.Test;
+
+import io.vertx.core.json.JsonObject;
 
 /**
  *
@@ -34,7 +34,7 @@ public class ResponseEventTest {
     ResponseEvent response = new ResponseEvent();
 
     response.setBody("Testing".getBytes());
-    response.getHeaders().put("a", "b");
+    response.addHeader("a", "b");
 
     JsonObject json = JsonObject.mapFrom(response);
     Assert.assertEquals(result, json);

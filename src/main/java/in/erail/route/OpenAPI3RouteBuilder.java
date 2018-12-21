@@ -16,7 +16,6 @@ import in.erail.glue.annotation.StartService;
 import in.erail.model.ReqestEvent;
 import in.erail.model.ResponseEvent;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
@@ -26,12 +25,10 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
-import io.vertx.core.json.JsonArray;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.Cookie;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Optional;
 
 /**
@@ -161,12 +158,13 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     pContext.response().setStatusCode(response.getStatusCode());
 
-    Map<String,String>[] cookies = Optional.ofNullable(response.getCookies()).orElse(new Map[0]);
+    @SuppressWarnings("unchecked")
+		Map<String,String>[] cookies = Optional.ofNullable(response.getCookies()).orElse(new Map[0]);
 
     Arrays
             .stream(cookies)
             .map((t) -> {
-              Optional cookieName = Optional.ofNullable(t.get(Json.Cookie.NAME));
+              Optional<String> cookieName = Optional.ofNullable(t.get(Json.Cookie.NAME));
               if (cookieName.isPresent()) {
                 Cookie c = Cookie.cookie((String) cookieName.get(), "");
                 Optional.ofNullable(t.get(Json.Cookie.VALUE)).ifPresent(v -> c.setValue(v));
