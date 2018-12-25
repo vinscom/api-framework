@@ -44,7 +44,7 @@ public class SingletonServiceImplTest {
                         vertx
                                 .sharedData()
                                 .<String, String>rxGetClusterWideMap("__in.erail.services")
-                                .flatMap((m) -> {
+                                .flatMapMaybe((m) -> {
                                   return m.rxGet("DummySingletonService");
                                 })
                                 .doOnSuccess((nodeId) -> {
@@ -59,7 +59,7 @@ public class SingletonServiceImplTest {
                                             vertx
                                                     .sharedData()
                                                     .<String, String>rxGetClusterWideMap("__in.erail.services")
-                                                    .flatMap(m2 -> {
+                                                    .flatMapMaybe(m2 -> {
                                                       return m2.rxGet("DummySingletonService");
                                                     })
                                                     .subscribe((updatedNodeId) -> {

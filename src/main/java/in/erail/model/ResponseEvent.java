@@ -24,7 +24,6 @@ public class ResponseEvent {
 
   public ResponseEvent() {
     mMultiValueHeaders = MultiMap.caseInsensitiveMultiMap();
-    mMultiValueHeaders.add(HttpHeaders.CONTENT_TYPE, MediaType.JAVASCRIPT_UTF_8.toString());
   }
 
   public boolean isIsBase64Encoded() {
@@ -83,6 +82,10 @@ public class ResponseEvent {
                     });
   }
 
+  /**
+   * Return copy of headers map
+   * @return 
+   */
   public Map<String, String[]> getMultiValueHeaders() {
 
     Map<String, String[]> result
@@ -122,6 +125,10 @@ public class ResponseEvent {
                     });
   }
 
+  /**
+   * Return copy of Header Map
+   * @return 
+   */
   public Map<String, String> getHeaders() {
 
     Map<String, String> result
@@ -156,5 +163,9 @@ public class ResponseEvent {
 
   public void addHeader(String pHeaderName, MediaType pMediaType) {
     addHeader(HttpHeaders.CONTENT_TYPE, pMediaType.toString());
+  }
+
+  public String headerValue(String pHeaderName) {
+    return mMultiValueHeaders.get(pHeaderName);
   }
 }
