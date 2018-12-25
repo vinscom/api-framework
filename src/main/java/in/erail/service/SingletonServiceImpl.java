@@ -2,6 +2,7 @@ package in.erail.service;
 
 import in.erail.glue.annotation.StartService;
 import io.reactivex.Completable;
+import io.reactivex.Single;
 import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
@@ -28,17 +29,8 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
       return;
     }
 
-    getVertx()
-            .sharedData()
-            .<String, String>rxGetClusterWideMap(getServiceMapName())
+    allowServiceToStart()
             .subscribeOn(Schedulers.io())
-            .flatMap((m) -> m.rxPutIfAbsent(getServiceName(), getClusterManager().getNodeID()))
-            .map((ownerNodeId) -> {
-              if (ownerNodeId == null) {
-                return true;
-              }
-              return getClusterManager().getNodeID().equals(ownerNodeId);
-            })
             .flatMapCompletable((success) -> {
               if (success) {
                 getLog().info(String.format("Starting Service:[%s]", getServiceName()));
@@ -48,6 +40,20 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
               return Completable.complete();
             })
             .blockingAwait();
+  }
+
+  protected Single<Boolean> allowServiceToStart() {
+    final String serviceName = getServiceName();
+    final String value = getClusterManager().getNodeID();
+
+    return getVertx()
+            .sharedData()
+            .<String, String>rxGetClusterWideMap(getServiceMapName())
+            .flatMapMaybe(m -> m.rxPutIfAbsent(serviceName, value))
+            .toSingle(value)
+            .doOnSuccess(serviceOwnerId -> getLog().debug(() -> "Service Owner ID:" + serviceOwnerId + ", This Node ID:" + value))
+            .map(serviceOwnerId -> getClusterManager().getNodeID().equals(serviceOwnerId))
+            .doOnSuccess(t -> getLog().debug(() -> "Service Start Decision:" + getServiceName() + ":" + t));
   }
 
   @Override
