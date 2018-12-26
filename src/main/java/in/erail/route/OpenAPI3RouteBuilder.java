@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 import static in.erail.common.FrameworkConstants.RoutingContext.Json;
 import in.erail.glue.annotation.StartService;
-import in.erail.model.ReqestEvent;
+import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -113,7 +113,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
    */
   public JsonObject serialiseRoutingContext(RoutingContext pContext) {
 
-    ReqestEvent request = new ReqestEvent();
+    RequestEvent request = new RequestEvent();
     request.setHttpMethod(pContext.request().method());
 
     if (request.getHttpMethod() == HttpMethod.POST

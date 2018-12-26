@@ -30,39 +30,43 @@ public class ResponseEvent {
     return mIsBase64Encoded;
   }
 
-  public void setIsBase64Encoded(boolean pIsBase64Encoded) {
+  public ResponseEvent setIsBase64Encoded(boolean pIsBase64Encoded) {
     this.mIsBase64Encoded = pIsBase64Encoded;
+    return this;
   }
 
   public int getStatusCode() {
     return mStatusCode;
   }
 
-  public void setStatusCode(int pStatusCode) {
+  public ResponseEvent setStatusCode(int pStatusCode) {
     this.mStatusCode = pStatusCode;
+    return this;
   }
 
   public byte[] getBody() {
     return mBody;
   }
 
-  public void setBody(byte[] pBody) {
+  public ResponseEvent setBody(byte[] pBody) {
     this.mBody = pBody;
+    return this;
   }
 
   public Map<String, String>[] getCookies() {
     return mCookies;
   }
 
-  public void setCookies(Map<String, String>[] pCookies) {
+  public ResponseEvent setCookies(Map<String, String>[] pCookies) {
     this.mCookies = pCookies;
+    return this;
   }
 
-  public void setMultiValueHeaders(Map<String, String[]> pValue) {
+  public ResponseEvent setMultiValueHeaders(Map<String, String[]> pValue) {
     Preconditions.checkNotNull(pValue);
 
     if (pValue.isEmpty()) {
-      return;
+      return this;
     }
 
     mMultiValueHeaders
@@ -80,6 +84,8 @@ public class ResponseEvent {
                       a.addAll(b);
                       return a;
                     });
+    
+    return this;
   }
 
   /**
@@ -103,11 +109,11 @@ public class ResponseEvent {
     return Collections.unmodifiableMap(result);
   }
 
-  public void setHeaders(Map<String, String> pValue) {
+  public ResponseEvent setHeaders(Map<String, String> pValue) {
     Preconditions.checkNotNull(pValue);
 
     if (pValue.isEmpty()) {
-      return;
+      return this;
     }
 
     mMultiValueHeaders
@@ -123,6 +129,7 @@ public class ResponseEvent {
                       a.addAll(b);
                       return a;
                     });
+    return this;
   }
 
   /**
@@ -146,23 +153,27 @@ public class ResponseEvent {
     return Collections.unmodifiableMap(result);
   }
 
-  public void setContentType(String pContentType) {
+  public ResponseEvent setContentType(String pContentType) {
     if (mMultiValueHeaders.contains(HttpHeaders.CONTENT_TYPE)) {
       mMultiValueHeaders.remove(HttpHeaders.CONTENT_TYPE);
     }
     mMultiValueHeaders.add(HttpHeaders.CONTENT_TYPE, pContentType);
+    return this;
   }
 
-  public void setContentType(MediaType pMediaType) {
+  public ResponseEvent setContentType(MediaType pMediaType) {
     setContentType(pMediaType.toString());
+    return this;
   }
 
-  public void addHeader(String pHeaderName, String pMediaType) {
+  public ResponseEvent addHeader(String pHeaderName, String pMediaType) {
     mMultiValueHeaders.add(HttpHeaders.CONTENT_TYPE, pMediaType);
+    return this;
   }
 
-  public void addHeader(String pHeaderName, MediaType pMediaType) {
+  public ResponseEvent addHeader(String pHeaderName, MediaType pMediaType) {
     addHeader(HttpHeaders.CONTENT_TYPE, pMediaType.toString());
+    return this;
   }
 
   public String headerValue(String pHeaderName) {
