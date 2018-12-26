@@ -8,9 +8,9 @@ import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import in.erail.test.TestConstants;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.reactivex.Maybe;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.eventbus.Message;
 
 /**
  *
@@ -19,12 +19,12 @@ import io.vertx.reactivex.core.eventbus.Message;
 public class BinaryBodyService extends RESTServiceImpl {
 
   @Override
-  public ResponseEvent process(RequestEvent pRequest) {
+  public Maybe<ResponseEvent> process(RequestEvent pRequest) {
     String topicName = pRequest.getPathParameters().get(TestConstants.Service.Broadcast.APIMessage.PARAM_TOPIC_NAME);
 
     if (Strings.isNullOrEmpty(topicName)) {
-      return new ResponseEvent()
-              .setStatusCode(HttpResponseStatus.BAD_REQUEST.code());
+      return Maybe.just(new ResponseEvent()
+              .setStatusCode(HttpResponseStatus.BAD_REQUEST.code()));
     }
 
     ResponseEvent response = new ResponseEvent();
@@ -34,7 +34,7 @@ public class BinaryBodyService extends RESTServiceImpl {
 
     String bodyContent = jsonBody.getString("data");
     response.setBody(bodyContent.getBytes());
-    return response;
+    return Maybe.just(response);
   }
 
 }

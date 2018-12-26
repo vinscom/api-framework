@@ -32,7 +32,6 @@ public class SecurityTools {
   private final CompletableFuture<SecretKeySpec> mKeySpec = new CompletableFuture<>();
   private final CompletableFuture<String> mGlobalUniqueString = new CompletableFuture<>();
 
-  @SuppressWarnings("unchecked")
   @StartService
   public void startup() {
 

@@ -25,6 +25,7 @@ public class BinaryBodyServiceTest {
   @Rule
   public Timeout rule = Timeout.seconds(2000);
 
+  @SuppressWarnings("deprecation")
   @Test
   public void testProcess(TestContext context) {
 
@@ -44,7 +45,7 @@ public class BinaryBodyServiceTest {
             .putHeader(HttpHeaders.AUTHORIZATION, TestConstants.ACCESS_TOKEN)
             .handler(response -> {
               context.assertEquals(response.statusCode(), 200, response.statusMessage());
-              context.assertEquals(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN),"*");
+              context.assertEquals(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN), "*");
               context.assertTrue(MediaType.parse(response.getHeader(HttpHeaders.CONTENT_TYPE)).equals(MediaType.PLAIN_TEXT_UTF_8));
               response.bodyHandler((event) -> {
                 context.assertEquals(event.toString(), "testdata");

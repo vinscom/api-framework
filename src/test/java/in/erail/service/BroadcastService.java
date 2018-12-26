@@ -5,10 +5,10 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import in.erail.test.TestConstants;
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.eventbus.Message;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.reactivex.Maybe;
 
 /**
  *
@@ -17,12 +17,12 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 public class BroadcastService extends RESTServiceImpl {
 
   @Override
-  public ResponseEvent process(RequestEvent pRequest) {
-    
+  public Maybe<ResponseEvent> process(RequestEvent pRequest) {
+
     String topicName = pRequest.getPathParameters().get(TestConstants.Service.Broadcast.APIMessage.PARAM_TOPIC_NAME);
 
     if (Strings.isNullOrEmpty(topicName)) {
-      return new ResponseEvent().setStatusCode(HttpResponseStatus.BAD_REQUEST.code());
+      return Maybe.just(new ResponseEvent().setStatusCode(HttpResponseStatus.BAD_REQUEST.code()));
     }
 
     JsonObject bodyJson = new JsonObject(pRequest.bodyAsString());
@@ -36,8 +36,8 @@ public class BroadcastService extends RESTServiceImpl {
     ResponseEvent response = new ResponseEvent();
     response.setBody(TestConstants.Service.Message.successMessage().toString().getBytes());
     response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8);
-    
-    return response;
+
+    return Maybe.just(response);
   }
- 
+
 }

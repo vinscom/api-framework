@@ -25,6 +25,7 @@ public class BroadcastServiceTest {
   @Rule
   public Timeout rule = Timeout.seconds(2000);
 
+  @SuppressWarnings("deprecation")
   @Test
   public void testProcess(TestContext context) {
 

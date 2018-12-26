@@ -6,9 +6,11 @@ import io.vertx.reactivex.core.Vertx;
 import org.apache.logging.log4j.Logger;
 import in.erail.glue.annotation.StartService;
 import in.erail.model.RequestEvent;
+import in.erail.model.ResponseEvent;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.eventbus.Message;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  *
@@ -34,7 +36,10 @@ public abstract class RESTServiceImpl implements RESTService {
               .doOnSubscribe((s) -> getLog().info(() -> String.format("%s[%s] service started", getServiceUniqueId(), Thread.currentThread().getName())))
               .doOnTerminate(() -> getLog().info(() -> String.format("%s[%s] service stopped", getServiceUniqueId(), Thread.currentThread().getName())))
               .flatMapSingle(this::handleRequest)
-              .subscribe((resp) -> getLog().trace(() -> resp.toString()), err -> getLog().error(() -> String.format("Process exception:[%s],Error:[%s]", getServiceUniqueId(), err)));
+              .subscribe(
+                      resp -> getLog().trace(() -> resp.toString()), 
+                      err -> getLog().error(() -> String.format("Process exception:[%s],Error:[%s]", getServiceUniqueId(), ExceptionUtils.getStackTrace(err)))
+              );
     }
   }
 
@@ -42,7 +47,8 @@ public abstract class RESTServiceImpl implements RESTService {
     return Single
             .just(pMessage)
             .map(m -> pMessage.body().mapTo(RequestEvent.class))
-            .map(req -> process(req))
+            .flatMapMaybe(req -> process(req))
+            .toSingle(new ResponseEvent())
             .map(resp -> JsonObject.mapFrom(resp))
             .doOnSuccess(resp -> pMessage.reply(resp));
   }
