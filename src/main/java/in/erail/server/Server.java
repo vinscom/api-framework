@@ -48,7 +48,7 @@ public class Server {
     }
 
     mHttpServer = server
-            .requestHandler(router::accept)
+            .requestHandler(router)
             .rxListen()
             .blockingGet();
 

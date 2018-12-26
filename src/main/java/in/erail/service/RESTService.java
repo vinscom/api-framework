@@ -3,6 +3,7 @@ package in.erail.service;
 
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
+import io.reactivex.Maybe;
 
 /**
  *
@@ -11,5 +12,5 @@ import in.erail.model.ResponseEvent;
 public interface RESTService {
   String getOperationId();
   String getServiceUniqueId();
-  ResponseEvent process(RequestEvent pRequest);
+  Maybe<ResponseEvent> process(RequestEvent pRequest);
 }
