@@ -11,7 +11,7 @@ import java.util.Map;
  * @author vinay
  */
 @JsonInclude(Include.NON_NULL)
-public class ReqestEvent {
+public class RequestEvent {
 
   private String mResource;
   private String mPath;

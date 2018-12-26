@@ -6,8 +6,9 @@ import com.google.common.net.MediaType;
 import in.erail.test.TestConstants;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.eventbus.Message;
-import in.erail.model.ReqestEvent;
+import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
+import io.netty.handler.codec.http.HttpResponseStatus;
 
 /**
  *
@@ -16,17 +17,15 @@ import in.erail.model.ResponseEvent;
 public class BroadcastService extends RESTServiceImpl {
 
   @Override
-  public void process(Message<JsonObject> pMessage) {
+  public ResponseEvent process(RequestEvent pRequest) {
     
-    ReqestEvent request = pMessage.body().mapTo(ReqestEvent.class);
-    
-    String topicName = request.getPathParameters().get(TestConstants.Service.Broadcast.APIMessage.PARAM_TOPIC_NAME);
+    String topicName = pRequest.getPathParameters().get(TestConstants.Service.Broadcast.APIMessage.PARAM_TOPIC_NAME);
 
     if (Strings.isNullOrEmpty(topicName)) {
-      pMessage.fail(0, "Empty Topic Name");
+      return new ResponseEvent().setStatusCode(HttpResponseStatus.BAD_REQUEST.code());
     }
 
-    JsonObject bodyJson = new JsonObject(request.bodyAsString());
+    JsonObject bodyJson = new JsonObject(pRequest.bodyAsString());
 
     getVertx()
             .eventBus()
@@ -38,7 +37,7 @@ public class BroadcastService extends RESTServiceImpl {
     response.setBody(TestConstants.Service.Message.successMessage().toString().getBytes());
     response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8);
     
-    pMessage.reply(JsonObject.mapFrom(response));
+    return response;
   }
-
+ 
 }

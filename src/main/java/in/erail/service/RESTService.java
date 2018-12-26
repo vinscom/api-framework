@@ -1,8 +1,8 @@
 package in.erail.service;
 
 
-import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.core.eventbus.Message;
+import in.erail.model.RequestEvent;
+import in.erail.model.ResponseEvent;
 
 /**
  *
@@ -11,5 +11,5 @@ import io.vertx.reactivex.core.eventbus.Message;
 public interface RESTService {
   String getOperationId();
   String getServiceUniqueId();
-  void process(Message<JsonObject> pMessage);
+  ResponseEvent process(RequestEvent pRequest);
 }

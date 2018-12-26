@@ -54,8 +54,8 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
                       .map((count) -> setHeader(count, ctx))
                       .doOnError((err) -> {
                         getLog().error(String.format("[%s] Error getting value for Key[%s] from redis", ctx.getId(), ctx.getAddressKey()), err);
-                      });
-
+                      })
+                      .toSingle(ctx);
             });
   }
 

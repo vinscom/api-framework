@@ -145,7 +145,7 @@ public class ReqestEventTest {
 
   @Test
   public void tesMapping() {
-    ReqestEvent request = Json.decodeValue(stringJson, ReqestEvent.class);
+    RequestEvent request = Json.decodeValue(stringJson, RequestEvent.class);
     JsonObject json = JsonObject.mapFrom(request);
     JsonObject result = new JsonObject(stringJson);
     assertEquals(json, result);

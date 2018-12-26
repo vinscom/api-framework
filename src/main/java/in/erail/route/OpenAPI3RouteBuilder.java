@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 import static in.erail.common.FrameworkConstants.RoutingContext.Json;
 import in.erail.glue.annotation.StartService;
-import in.erail.model.ReqestEvent;
+import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.vertx.core.eventbus.DeliveryOptions;
@@ -90,7 +90,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                     (reply) -> {
                       if (reply.succeeded()) {
                         JsonObject response = (JsonObject) reply.result().body();
-                        buildResponseFromReply(response, pRequestContext).end();
+                        HttpServerResponse resp = buildResponseFromReply(response, pRequestContext);
+                        resp.end();
                       } else {
                         ((Meter) getMetrics().get(pServiceUniqueId + FAIL_SUFFIX)).mark();
                         getLog().error(() -> "Error in reply:" + reply.cause().toString());
@@ -112,7 +113,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
    */
   public JsonObject serialiseRoutingContext(RoutingContext pContext) {
 
-    ReqestEvent request = new ReqestEvent();
+    RequestEvent request = new RequestEvent();
     request.setHttpMethod(pContext.request().method());
 
     if (request.getHttpMethod() == HttpMethod.POST
@@ -144,8 +145,10 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     ResponseEvent response = pReplyResponse.mapTo(ResponseEvent.class);
 
-    if (!response.getHeaders().containsKey(HttpHeaders.CONTENT_TYPE)) {
-      response.getHeaders().put(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM.toString());
+    Optional<String> contentType = Optional.ofNullable(response.headerValue(HttpHeaders.CONTENT_TYPE));
+
+    if (contentType.isPresent()) {
+      response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM);
     }
 
     response
@@ -159,7 +162,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     pContext.response().setStatusCode(response.getStatusCode());
 
     @SuppressWarnings("unchecked")
-		Map<String,String>[] cookies = Optional.ofNullable(response.getCookies()).orElse(new Map[0]);
+    Map<String, String>[] cookies = Optional.ofNullable(response.getCookies()).orElse(new Map[0]);
 
     Arrays
             .stream(cookies)
@@ -184,9 +187,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     body.ifPresent((t) -> {
       pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(t.length));
-      pContext.response().write(Buffer.newInstance(io.vertx.core.buffer.Buffer.buffer(t)));
+      pContext.response().write(Buffer.buffer(t));
     });
-
     return pContext.response();
   }
 
@@ -210,7 +212,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   public Router getRouter(Router pRouter) {
 
     OpenAPI3RouterFactory apiFactory = OpenAPI3RouterFactory
-            .rxCreateRouterFactoryFromFile(getVertx(), getOpenAPI3File().getAbsolutePath())
+            .rxCreate(getVertx(), getOpenAPI3File().getAbsolutePath())
             .blockingGet();
 
     Optional

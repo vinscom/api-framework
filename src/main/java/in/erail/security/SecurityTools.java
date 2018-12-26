@@ -7,16 +7,12 @@ package in.erail.security;
 import in.erail.glue.annotation.StartService;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.Vertx;
-import io.vertx.reactivex.core.shareddata.AsyncMap;
-import io.vertx.reactivex.core.shareddata.Lock;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.crypto.BadPaddingException;
@@ -47,69 +43,33 @@ public class SecurityTools {
       return;
     }
 
-    Map<String, Object> cryptCtx = new HashMap<>();
-
-    Single<Lock> lock = getVertx()
-            .sharedData()
-            .rxGetLockWithTimeout("_in.erail.security", 5000);
-
-    getVertx()
-            .sharedData()
-            .<String, byte[]>rxGetClusterWideMap("_in.erail.security")
-            .flatMap((m) -> {
-              cryptCtx.put("map", m);
-              return m.rxGet("key");
-            })
-            .map((k) -> {
-              cryptCtx.put("key", k);
-              return cryptCtx;
-            })
-            .flatMap((ctx) -> {
-              if (ctx.get("key") == null) {
-                return lock
-                        .map((l) -> {
-                          ctx.put("lock", l);
-                          return ctx;
-                        });
-              }
-              return Single.just(ctx);
-            })
-            .flatMap(ctx -> {
-              if (ctx.get("lock") != null) {
-                return ((AsyncMap<String, Object>) (ctx.get("map")))
-                        .rxGet("key")
-                        .map((k) -> {
-                          ctx.put("key", k);
-                          return ctx;
-                        });
-              }
-              return Single.just(ctx);
-            })
-            .flatMap((ctx) -> {
-              if (ctx.get("key") == null) {
-                KeyGenerator keygen = KeyGenerator.getInstance("AES");
-                keygen.init(128);
-                byte[] key = keygen.generateKey().getEncoded();
-                return ((AsyncMap<String, Object>) (ctx.get("map")))
-                        .rxPut("key", key)
-                        .doOnComplete(() -> ctx.put("key", key))
-                        .toSingleDefault(ctx);
-              }
-              return Single.just(ctx);
-            })
-            .map(ctx -> (byte[]) ctx.get("key"))
-            .doFinally(() -> {
-              if (cryptCtx.containsKey("lock")) {
-                Lock l = (Lock) cryptCtx.get("lock");
-                l.release();
-              }
-            })
+    generateKey()
+            .flatMap(v -> addValueToClusterMap("key", v))
             .subscribe((key) -> {
               mKeySpec.complete(new SecretKeySpec(key, "AES"));
               String unique = Base64.getEncoder().encodeToString(Arrays.copyOfRange(key, 0, 5));
               mGlobalUniqueString.complete(unique.replace("=", ""));
               getLog().info(() -> String.format("GlobalUniqueString:[%s]", unique));
             });
+  }
+
+  protected Single<byte[]> addValueToClusterMap(String pKey, byte[] pValue) {
+    return getVertx()
+            .sharedData()
+            .<String, byte[]>rxGetClusterWideMap("_in.erail.security")
+            .flatMapMaybe(m -> m.rxPutIfAbsent(pKey, pValue))
+            .toSingle(pValue);
+  }
+
+  protected Single<byte[]> generateKey() {
+    KeyGenerator keygen;
+    try {
+      keygen = KeyGenerator.getInstance("AES");
+    } catch (NoSuchAlgorithmException ex) {
+      return Single.error(ex);
+    }
+    keygen.init(128);
+    return Single.just(keygen.generateKey().getEncoded());
   }
 
   /**
