@@ -183,12 +183,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .filter(t -> t.isPresent())
             .forEach(t -> pContext.addCookie(t.get()));
 
-    Optional<byte[]> body = Optional.ofNullable(response.getBody());
+    Optional<byte[]> body = Optional
+            .ofNullable(response.getBody());
 
     body.ifPresent((t) -> {
       pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(t.length));
       pContext.response().write(Buffer.buffer(t));
     });
+
     return pContext.response();
   }
 
@@ -245,6 +247,18 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                         });
 
                         apiFactory.addFailureHandlerByOperationId(service.getOperationId(), (routingContext) -> {
+                          routingContext
+                                  .response()
+                                  .setStatusCode(400)
+                                  .end(routingContext.failure().toString());
+                        });
+                        apiFactory.setValidationFailureHandler((routingContext) -> {
+                          routingContext
+                                  .response()
+                                  .setStatusCode(400)
+                                  .end(routingContext.failure().toString());
+                        });
+                        apiFactory.setNotImplementedFailureHandler((routingContext) -> {
                           routingContext
                                   .response()
                                   .setStatusCode(400)
