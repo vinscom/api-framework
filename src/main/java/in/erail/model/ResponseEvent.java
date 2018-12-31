@@ -3,6 +3,7 @@ package in.erail.model;
 import com.google.common.base.Preconditions;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
+import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.MultiMap;
 import java.util.Arrays;
 import java.util.Collections;
@@ -179,4 +180,10 @@ public class ResponseEvent {
   public String headerValue(String pHeaderName) {
     return mMultiValueHeaders.get(pHeaderName);
   }
+
+  @Override
+  public String toString() {
+    return JsonObject.mapFrom(this).toString();
+  }
+  
 }

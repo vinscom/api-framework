@@ -1,5 +1,6 @@
 package in.erail.service;
 
+import com.google.common.net.MediaType;
 import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
@@ -7,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 import in.erail.glue.annotation.StartService;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.eventbus.Message;
@@ -50,7 +52,14 @@ public abstract class RESTServiceImpl implements RESTService {
             .flatMapMaybe(req -> process(req))
             .toSingle(new ResponseEvent())
             .map(resp -> JsonObject.mapFrom(resp))
-            .doOnSuccess(resp -> pMessage.reply(resp));
+            .doOnSuccess(resp -> pMessage.reply(resp))
+            .doOnError(err -> {
+              ResponseEvent resp = new ResponseEvent()
+                      .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
+                      .setContentType(MediaType.PLAIN_TEXT_UTF_8)
+                      .setBody(ExceptionUtils.getMessage(err).getBytes());
+              pMessage.reply(JsonObject.mapFrom(resp));
+            });
   }
 
   @Override

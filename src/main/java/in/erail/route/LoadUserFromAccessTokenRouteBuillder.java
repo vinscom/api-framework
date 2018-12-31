@@ -2,13 +2,12 @@ package in.erail.route;
 
 import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
+import in.erail.user.UserProvider;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.oauth2.impl.OAuth2AuthProviderImpl;
-import io.vertx.ext.auth.oauth2.impl.OAuth2TokenImpl;
-import io.vertx.reactivex.ext.auth.oauth2.AccessToken;
-import io.vertx.reactivex.ext.auth.oauth2.OAuth2Auth;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -16,41 +15,47 @@ import io.vertx.reactivex.ext.web.RoutingContext;
  */
 public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderImpl {
 
-  private OAuth2Auth mOAuth2Auth;
-  
-  public OAuth2Auth getOAuth2Auth() {
-    return mOAuth2Auth;
-  }
-
-  public void setOAuth2Auth(OAuth2Auth pOAuth2Auth) {
-    this.mOAuth2Auth = pOAuth2Auth;
-  }
+  private Pattern AUTH_TOKEN = Pattern.compile("^Bearer\\s(?<token>.*)");
+  private UserProvider mUserProvider;
 
   @Override
   public Router getRouter(Router pRouter) {
     pRouter.route().handler(this::handle);
     return pRouter;
-
   }
 
   public void handle(RoutingContext pRoutingContext) {
-    
+
     if (pRoutingContext.user() == null) {
       String access_token = pRoutingContext.request().getHeader(HttpHeaders.AUTHORIZATION);
       if (!Strings.isNullOrEmpty(access_token)) {
-        OAuth2AuthProviderImpl provider = (OAuth2AuthProviderImpl) getOAuth2Auth().getDelegate();
-        JsonObject accessToken = new JsonObject().put("access_token", access_token.split(" ")[1]);
-        try {
-          OAuth2TokenImpl token = new OAuth2TokenImpl(provider, accessToken);
-          pRoutingContext.setUser(new AccessToken(token));
-        } catch (RuntimeException e) {
-          getLog().error(e);
-          pRoutingContext.fail(401);
-          return;
+        Matcher token = AUTH_TOKEN.matcher(access_token);
+        if (token.find()) {
+          JsonObject accessToken = new JsonObject().put("access_token", token.group("token"));
+          try {
+            pRoutingContext
+                    .setUser(getUserProvider()
+                            .getUser(accessToken)
+                            .blockingGet());
+          } catch (RuntimeException e) {
+            getLog().error(e);
+            pRoutingContext.fail(401);
+            return;
+          }
+        } else {
+          getLog().warn(() -> "Invalid Auth Header:" + access_token);
         }
       }
     }
     pRoutingContext.next();
+  }
+
+  public UserProvider getUserProvider() {
+    return mUserProvider;
+  }
+
+  public void setUserProvider(UserProvider pUserProvider) {
+    this.mUserProvider = pUserProvider;
   }
 
 }
