@@ -154,8 +154,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     Optional<String> contentType = Optional.ofNullable(response.headerValue(HttpHeaders.CONTENT_TYPE));
 
-    if (contentType.isPresent()) {
-      response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM);
+    if (!contentType.isPresent()) {
+      response.setContentType(MediaType.OCTET_STREAM);
     }
 
     response

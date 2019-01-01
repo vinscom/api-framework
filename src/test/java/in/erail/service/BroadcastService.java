@@ -1,14 +1,14 @@
 package in.erail.service;
 
 import com.google.common.base.Strings;
-import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import in.erail.test.TestConstants;
-import io.vertx.core.json.JsonObject;
+
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
+import in.erail.test.TestConstants;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.Maybe;
+import io.vertx.core.json.JsonObject;
 
 /**
  *
@@ -35,7 +35,7 @@ public class BroadcastService extends RESTServiceImpl {
 
     ResponseEvent response = new ResponseEvent();
     response.setBody(TestConstants.Service.Message.successMessage().toString().getBytes());
-    response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8);
+    response.setContentType(MediaType.JSON_UTF_8);
 
     return Maybe.just(response);
   }

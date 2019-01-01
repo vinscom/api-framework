@@ -167,13 +167,8 @@ public class ResponseEvent {
     return this;
   }
 
-  public ResponseEvent addHeader(String pHeaderName, String pMediaType) {
-    mMultiValueHeaders.add(HttpHeaders.CONTENT_TYPE, pMediaType);
-    return this;
-  }
-
-  public ResponseEvent addHeader(String pHeaderName, MediaType pMediaType) {
-    addHeader(HttpHeaders.CONTENT_TYPE, pMediaType.toString());
+  public ResponseEvent addHeader(String pHeaderName, String pValue) {
+    mMultiValueHeaders.add(pHeaderName, pValue);
     return this;
   }
 
