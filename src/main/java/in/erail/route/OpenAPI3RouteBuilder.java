@@ -126,6 +126,13 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     request.setQueryStringParameters(convertMultiMapIntoMap(pContext.queryParams()));
     request.setPathParameters(convertMultiMapIntoMap(pContext.request().params()));
 
+    JsonObject principal = Optional
+            .ofNullable(pContext.user())
+            .flatMap((t) -> Optional.ofNullable(t.principal()))
+            .orElse(new JsonObject());
+
+    request.setPrincipal(principal.getMap());
+
     JsonObject result = JsonObject.mapFrom(request);
 
     getLog().debug(() -> "Context to JSON:" + result.toString());
@@ -147,8 +154,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     Optional<String> contentType = Optional.ofNullable(response.headerValue(HttpHeaders.CONTENT_TYPE));
 
-    if (contentType.isPresent()) {
-      response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM);
+    if (!contentType.isPresent()) {
+      response.setContentType(MediaType.OCTET_STREAM);
     }
 
     response
