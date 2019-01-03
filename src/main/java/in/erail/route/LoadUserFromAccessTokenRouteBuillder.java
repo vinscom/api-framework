@@ -2,8 +2,8 @@ package in.erail.route;
 
 import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
-import in.erail.user.UserProvider;
 import io.vertx.core.json.JsonObject;
+import io.vertx.reactivex.ext.auth.AuthProvider;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import java.util.regex.Matcher;
@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderImpl {
 
   private final Pattern AUTH_TOKEN = Pattern.compile("^Bearer\\s(?<token>.*)");
-  private UserProvider mUserProvider;
+  private AuthProvider mAuthProvider;
 
   @Override
   public Router getRouter(Router pRouter) {
@@ -29,14 +29,15 @@ public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderI
     if (pRoutingContext.user() == null) {
       String access_token = pRoutingContext.request().getHeader(HttpHeaders.AUTHORIZATION);
       if (!Strings.isNullOrEmpty(access_token)) {
-        Matcher token = AUTH_TOKEN.matcher(access_token);
-        if (token.find()) {
-          JsonObject accessToken = new JsonObject().put("access_token", token.group("token"));
+        Matcher tokenRegex = AUTH_TOKEN.matcher(access_token);
+        if (tokenRegex.find()) {
+          String token = tokenRegex.group("token");
+          JsonObject authInfo = new JsonObject()
+                  .put("access_token", token)
+                  .put("token_type", "Bearer")
+                  .put("jwt", token);
           try {
-            pRoutingContext
-                    .setUser(getUserProvider()
-                            .getUser(accessToken)
-                            .blockingGet());
+            pRoutingContext.setUser(getAuthProvider().rxAuthenticate(authInfo).blockingGet());
           } catch (RuntimeException e) {
             getLog().error(e);
             pRoutingContext.fail(401);
@@ -50,12 +51,12 @@ public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderI
     pRoutingContext.next();
   }
 
-  public UserProvider getUserProvider() {
-    return mUserProvider;
+  public AuthProvider getAuthProvider() {
+    return mAuthProvider;
   }
 
-  public void setUserProvider(UserProvider pUserProvider) {
-    this.mUserProvider = pUserProvider;
+  public void setAuthProvider(AuthProvider pAuthProvider) {
+    this.mAuthProvider = pAuthProvider;
   }
 
 }

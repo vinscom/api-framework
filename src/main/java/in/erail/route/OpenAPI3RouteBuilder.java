@@ -37,7 +37,6 @@ import java.util.Optional;
  */
 public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
-  private static final String AUTHORIZATION_PREFIX = "realm";
   private static final String FAIL_SUFFIX = ".fail";
   private RESTService[] mServices;
   private File mOpenAPI3File;
@@ -233,14 +232,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                       .forEach((service) -> {
                         getLog().debug(() -> "Adding OpenAPI service handle:" + service.getOperationId());
                         apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
-                          if (isSecurityEnable()) {
+                          if (isSecurityEnable() && service.isSecure()) {
 
                             if (routingContext.user() == null) {
                               routingContext.fail(401);
                               return;
                             }
 
-                            routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getOperationId(), (event) -> {
+                            routingContext.user().isAuthorized(service.getAuthority(), (event) -> {
                               boolean authSuccess = event.succeeded() ? event.result() : false;
                               if (authSuccess) {
                                 process(routingContext, service.getServiceUniqueId());

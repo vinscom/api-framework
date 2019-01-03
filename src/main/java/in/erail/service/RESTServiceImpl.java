@@ -29,6 +29,8 @@ public abstract class RESTServiceImpl implements RESTService {
   private Logger mLog;
   private Scheduler mScheduler = Schedulers.io();
   private ResponseEvent mDefaultResponseEvent = DEFAULT_REPONSE_EVENT;
+  private boolean secure = false;
+  private String authority;
 
   @StartService
   public void start() {
@@ -124,4 +126,21 @@ public abstract class RESTServiceImpl implements RESTService {
     this.mDefaultResponseEvent = pDefaultResponseEvent;
   }
 
+  @Override
+  public boolean isSecure() {
+    return secure;
+  }
+
+  public void setSecure(boolean pSecure) {
+    this.secure = pSecure;
+  }
+
+  @Override
+  public String getAuthority() {
+    return authority;
+  }
+
+  public void setAuthority(String pAuthority) {
+    this.authority = pAuthority;
+  }
 }
