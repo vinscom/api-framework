@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
  */
 public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderImpl {
 
-  private Pattern AUTH_TOKEN = Pattern.compile("^Bearer\\s(?<token>.*)");
+  private final Pattern AUTH_TOKEN = Pattern.compile("^Bearer\\s(?<token>.*)");
   private UserProvider mUserProvider;
 
   @Override

@@ -155,7 +155,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     Optional<String> contentType = Optional.ofNullable(response.headerValue(HttpHeaders.CONTENT_TYPE));
 
     if (!contentType.isPresent()) {
-      response.setContentType(MediaType.OCTET_STREAM);
+      response.setMediaType(MediaType.OCTET_STREAM);
     }
 
     response
@@ -231,6 +231,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                       .asList(t)
                       .stream()
                       .forEach((service) -> {
+                        getLog().debug(() -> "Adding OpenAPI service handle:" + service.getOperationId());
                         apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
                           if (isSecurityEnable()) {
 

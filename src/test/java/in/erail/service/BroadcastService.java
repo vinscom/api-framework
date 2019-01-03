@@ -35,7 +35,7 @@ public class BroadcastService extends RESTServiceImpl {
 
     ResponseEvent response = new ResponseEvent();
     response.setBody(TestConstants.Service.Message.successMessage().toString().getBytes());
-    response.setContentType(MediaType.JSON_UTF_8);
+    response.setMediaType(MediaType.JSON_UTF_8);
 
     return Maybe.just(response);
   }

@@ -20,12 +20,15 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  */
 public abstract class RESTServiceImpl implements RESTService {
 
+  private static final ResponseEvent DEFAULT_REPONSE_EVENT = new ResponseEvent();
+  
   private String mOperationId;
   private String mServiceUniqueId;
   private Vertx mVertx;
   private boolean mEnable = false;
   private Logger mLog;
   private Scheduler mScheduler = Schedulers.io();
+  private ResponseEvent mDefaultResponseEvent = DEFAULT_REPONSE_EVENT;
 
   @StartService
   public void start() {
@@ -39,7 +42,7 @@ public abstract class RESTServiceImpl implements RESTService {
               .doOnTerminate(() -> getLog().info(() -> String.format("%s[%s] service stopped", getServiceUniqueId(), Thread.currentThread().getName())))
               .flatMapSingle(this::handleRequest)
               .subscribe(
-                      resp -> getLog().trace(() -> resp.toString()), 
+                      resp -> getLog().trace(() -> resp.toString()),
                       err -> getLog().error(() -> String.format("Process exception:[%s],Error:[%s]", getServiceUniqueId(), ExceptionUtils.getStackTrace(err)))
               );
     }
@@ -50,13 +53,13 @@ public abstract class RESTServiceImpl implements RESTService {
             .just(pMessage)
             .map(m -> pMessage.body().mapTo(RequestEvent.class))
             .flatMapMaybe(req -> process(req))
-            .toSingle(new ResponseEvent())
+            .toSingle(getDefaultResponseEvent())
             .map(resp -> JsonObject.mapFrom(resp))
             .doOnSuccess(resp -> pMessage.reply(resp))
             .doOnError(err -> {
               ResponseEvent resp = new ResponseEvent()
                       .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
-                      .setContentType(MediaType.PLAIN_TEXT_UTF_8)
+                      .setMediaType(MediaType.PLAIN_TEXT_UTF_8)
                       .setBody(ExceptionUtils.getMessage(err).getBytes());
               pMessage.reply(JsonObject.mapFrom(resp));
             });
@@ -110,6 +113,14 @@ public abstract class RESTServiceImpl implements RESTService {
 
   public void setScheduler(Scheduler pScheduler) {
     this.mScheduler = pScheduler;
+  }
+
+  public ResponseEvent getDefaultResponseEvent() {
+    return mDefaultResponseEvent;
+  }
+
+  public void setDefaultResponseEvent(ResponseEvent pDefaultResponseEvent) {
+    this.mDefaultResponseEvent = pDefaultResponseEvent;
   }
 
 }

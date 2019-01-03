@@ -162,8 +162,13 @@ public class ResponseEvent {
     return this;
   }
 
-  public ResponseEvent setContentType(MediaType pMediaType) {
-    setContentType(pMediaType.toString());
+  /**
+   * Predefined Content Type
+   * @param pMediaType
+   * @return Response Event
+   */
+  public ResponseEvent setMediaType(MediaType pMediaType) {
+    ResponseEvent.this.setContentType(pMediaType.toString());
     return this;
   }
 

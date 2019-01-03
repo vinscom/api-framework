@@ -27,7 +27,7 @@ public class BinaryBodyService extends RESTServiceImpl {
     }
 
     ResponseEvent response = new ResponseEvent();
-    response.setContentType(MediaType.PLAIN_TEXT_UTF_8);
+    response.setMediaType(MediaType.PLAIN_TEXT_UTF_8);
 
     JsonObject jsonBody = new JsonObject(Buffer.buffer(pRequest.getBody()));
 
