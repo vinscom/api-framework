@@ -21,7 +21,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 public abstract class RESTServiceImpl implements RESTService {
 
   private static final ResponseEvent DEFAULT_REPONSE_EVENT = new ResponseEvent();
-  
+
   private String mOperationId;
   private String mServiceUniqueId;
   private Vertx mVertx;
@@ -38,13 +38,12 @@ public abstract class RESTServiceImpl implements RESTService {
               .<JsonObject>consumer(getServiceUniqueId())
               .toFlowable()
               .subscribeOn(getScheduler())
+              .flatMapSingle(this::handleRequest)
               .doOnSubscribe((s) -> getLog().info(() -> String.format("%s[%s] service started", getServiceUniqueId(), Thread.currentThread().getName())))
               .doOnTerminate(() -> getLog().info(() -> String.format("%s[%s] service stopped", getServiceUniqueId(), Thread.currentThread().getName())))
-              .flatMapSingle(this::handleRequest)
-              .subscribe(
-                      resp -> getLog().trace(() -> resp.toString()),
-                      err -> getLog().error(() -> String.format("Process exception:[%s],Error:[%s]", getServiceUniqueId(), ExceptionUtils.getStackTrace(err)))
-              );
+              .doOnCancel(() -> getLog().info(() -> String.format("%s[%s] service stopped(cancel)", getServiceUniqueId(), Thread.currentThread().getName())))
+              .doOnComplete(() -> getLog().info(() -> String.format("%s[%s] service stopped(complete)", getServiceUniqueId(), Thread.currentThread().getName())))
+              .subscribe(resp -> getLog().trace(() -> resp.toString()));
     }
   }
 
@@ -62,7 +61,9 @@ public abstract class RESTServiceImpl implements RESTService {
                       .setMediaType(MediaType.PLAIN_TEXT_UTF_8)
                       .setBody(ExceptionUtils.getMessage(err).getBytes());
               pMessage.reply(JsonObject.mapFrom(resp));
-            });
+            })
+            .doOnError(oerr -> getLog().error(() -> String.format("Process exception:[%s],Error:[%s]", getServiceUniqueId(), ExceptionUtils.getStackTrace(oerr))))
+            .onErrorReturnItem(new JsonObject());
   }
 
   @Override
