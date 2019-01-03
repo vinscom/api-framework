@@ -30,6 +30,7 @@ import io.vertx.reactivex.ext.web.Cookie;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  *
@@ -256,25 +257,32 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                         apiFactory.addFailureHandlerByOperationId(service.getOperationId(), (routingContext) -> {
                           routingContext
                                   .response()
-                                  .setStatusCode(400)
-                                  .end(routingContext.failure().toString());
+                                  .setStatusCode(routingContext.statusCode())
+                                  .end(generateErrorResponse(routingContext));
                         });
                         apiFactory.setValidationFailureHandler((routingContext) -> {
                           routingContext
                                   .response()
-                                  .setStatusCode(400)
-                                  .end(routingContext.failure().toString());
+                                  .setStatusCode(routingContext.statusCode())
+                                  .end(generateErrorResponse(routingContext));
                         });
                         apiFactory.setNotImplementedFailureHandler((routingContext) -> {
                           routingContext
                                   .response()
-                                  .setStatusCode(400)
-                                  .end(routingContext.failure().toString());
+                                  .setStatusCode(routingContext.statusCode())
+                                  .end(generateErrorResponse(routingContext));
                         });
                       });
             });
 
     return apiFactory.getRouter();
+  }
+
+  protected String generateErrorResponse(RoutingContext pContext) {
+    return Optional
+            .ofNullable(pContext.failure())
+            .map(error -> ExceptionUtils.getMessage(error))
+            .orElse(pContext.getBodyAsString());
   }
 
   public boolean isSecurityEnable() {
