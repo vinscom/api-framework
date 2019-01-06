@@ -30,7 +30,7 @@ public class CORSRouteBuilderTest {
     Async async = context.async();
 
     Server server = Glue.instance().resolve("/in/erail/server/Server");
-
+    
     server
             .getVertx()
             .createHttpClient()
@@ -38,6 +38,7 @@ public class CORSRouteBuilderTest {
             .putHeader("content-type", "application/json")
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
             .putHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
+            .putHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "cache-control,content-type,postman-token")
             .handler(response -> {
               context.assertEquals(response.statusCode(), 200, response.statusMessage());
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS.toString()), "GET,POST,OPTIONS");
