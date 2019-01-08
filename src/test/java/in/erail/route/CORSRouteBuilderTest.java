@@ -12,7 +12,6 @@ import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.Rule;
 import in.erail.glue.Glue;
 import io.netty.handler.codec.http.HttpHeaderNames;
-import io.vertx.core.http.HttpMethod;
 
 /**
  *
