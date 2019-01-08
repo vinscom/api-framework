@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.google.common.io.BaseEncoding;
 import io.vertx.core.http.HttpMethod;
+import io.vertx.core.json.JsonObject;
 import java.util.Map;
 
 /**
@@ -23,9 +24,10 @@ public class RequestEvent {
   private Map<String, String> mPathParameters;
   private Map<String, String> mStageVariables;
   @SuppressWarnings("rawtypes")
-	private Map mRequestContext;
+  private Map mRequestContext;
   private byte[] mBody = new byte[0];
   private boolean mIsBase64Encoded = false;
+  private Map<String, Object> mPrincipal;
 
   public String getResource() {
     return mResource;
@@ -100,12 +102,12 @@ public class RequestEvent {
   }
 
   @SuppressWarnings("rawtypes")
-	public Map getRequestContext() {
+  public Map getRequestContext() {
     return mRequestContext;
   }
 
   @SuppressWarnings("rawtypes")
-	public void setRequestContext(Map pRequestContext) {
+  public void setRequestContext(Map pRequestContext) {
     this.mRequestContext = pRequestContext;
   }
 
@@ -124,11 +126,25 @@ public class RequestEvent {
   public void setBody(byte[] pBody) {
     this.mBody = pBody;
   }
-  
-  public String bodyAsString(){
-    if(isIsBase64Encoded()){
+
+  public String bodyAsString() {
+    if (isIsBase64Encoded()) {
       return new String(BaseEncoding.base64().decode(new String(getBody())));
     }
     return new String(getBody());
   }
+
+  public Map<String, Object> getPrincipal() {
+    return mPrincipal;
+  }
+
+  public void setPrincipal(Map<String, Object> pPrincipal) {
+    this.mPrincipal = pPrincipal;
+  }
+
+  @Override
+  public String toString() {
+    return JsonObject.mapFrom(this).toString();
+  }
+
 }

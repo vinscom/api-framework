@@ -30,6 +30,7 @@ import io.vertx.reactivex.ext.web.Cookie;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  *
@@ -37,7 +38,6 @@ import java.util.Optional;
  */
 public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
-  private static final String AUTHORIZATION_PREFIX = "realm";
   private static final String FAIL_SUFFIX = ".fail";
   private RESTService[] mServices;
   private File mOpenAPI3File;
@@ -126,6 +126,13 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
     request.setQueryStringParameters(convertMultiMapIntoMap(pContext.queryParams()));
     request.setPathParameters(convertMultiMapIntoMap(pContext.request().params()));
 
+    JsonObject principal = Optional
+            .ofNullable(pContext.user())
+            .flatMap((t) -> Optional.ofNullable(t.principal()))
+            .orElse(new JsonObject());
+
+    request.setPrincipal(principal.getMap());
+
     JsonObject result = JsonObject.mapFrom(request);
 
     getLog().debug(() -> "Context to JSON:" + result.toString());
@@ -147,8 +154,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     Optional<String> contentType = Optional.ofNullable(response.headerValue(HttpHeaders.CONTENT_TYPE));
 
-    if (contentType.isPresent()) {
-      response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.OCTET_STREAM);
+    if (!contentType.isPresent()) {
+      response.setMediaType(MediaType.OCTET_STREAM);
     }
 
     response
@@ -183,12 +190,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             .filter(t -> t.isPresent())
             .forEach(t -> pContext.addCookie(t.get()));
 
-    Optional<byte[]> body = Optional.ofNullable(response.getBody());
+    Optional<byte[]> body = Optional
+            .ofNullable(response.getBody());
 
     body.ifPresent((t) -> {
       pContext.response().putHeader(HttpHeaderNames.CONTENT_LENGTH.toString(), Integer.toString(t.length));
       pContext.response().write(Buffer.buffer(t));
     });
+
     return pContext.response();
   }
 
@@ -222,15 +231,16 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                       .asList(t)
                       .stream()
                       .forEach((service) -> {
+                        getLog().debug(() -> "Adding OpenAPI service handle:" + service.getOperationId());
                         apiFactory.addHandlerByOperationId(service.getOperationId(), (routingContext) -> {
-                          if (isSecurityEnable()) {
+                          if (isSecurityEnable() && service.isSecure()) {
 
                             if (routingContext.user() == null) {
                               routingContext.fail(401);
                               return;
                             }
 
-                            routingContext.user().isAuthorized(AUTHORIZATION_PREFIX + ":" + service.getOperationId(), (event) -> {
+                            routingContext.user().isAuthorized(service.getAuthority(), (event) -> {
                               boolean authSuccess = event.succeeded() ? event.result() : false;
                               if (authSuccess) {
                                 process(routingContext, service.getServiceUniqueId());
@@ -247,13 +257,32 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                         apiFactory.addFailureHandlerByOperationId(service.getOperationId(), (routingContext) -> {
                           routingContext
                                   .response()
-                                  .setStatusCode(400)
-                                  .end(routingContext.failure().toString());
+                                  .setStatusCode(routingContext.statusCode())
+                                  .end(generateErrorResponse(routingContext));
+                        });
+                        apiFactory.setValidationFailureHandler((routingContext) -> {
+                          routingContext
+                                  .response()
+                                  .setStatusCode(routingContext.statusCode())
+                                  .end(generateErrorResponse(routingContext));
+                        });
+                        apiFactory.setNotImplementedFailureHandler((routingContext) -> {
+                          routingContext
+                                  .response()
+                                  .setStatusCode(routingContext.statusCode())
+                                  .end(generateErrorResponse(routingContext));
                         });
                       });
             });
 
     return apiFactory.getRouter();
+  }
+
+  protected String generateErrorResponse(RoutingContext pContext) {
+    return Optional
+            .ofNullable(pContext.failure())
+            .map(error -> ExceptionUtils.getMessage(error))
+            .orElse(pContext.getBodyAsString());
   }
 
   public boolean isSecurityEnable() {

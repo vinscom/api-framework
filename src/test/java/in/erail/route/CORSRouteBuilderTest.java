@@ -30,7 +30,7 @@ public class CORSRouteBuilderTest {
     Async async = context.async();
 
     Server server = Glue.instance().resolve("/in/erail/server/Server");
-
+    
     server
             .getVertx()
             .createHttpClient()
@@ -38,9 +38,10 @@ public class CORSRouteBuilderTest {
             .putHeader("content-type", "application/json")
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
             .putHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "POST")
+            .putHeader(HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS, "cache-control,content-type,postman-token")
             .handler(response -> {
               context.assertEquals(response.statusCode(), 200, response.statusMessage());
-              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS.toString()), "GET,POST,OPTIONS");
+              context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_METHODS.toString()), "DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT");
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_ORIGIN.toString()), "*");
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_MAX_AGE.toString()), "3600");
               context.assertEquals(response.getHeader(HttpHeaderNames.ACCESS_CONTROL_ALLOW_HEADERS.toString()), "X-POST");

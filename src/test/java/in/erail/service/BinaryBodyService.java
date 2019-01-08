@@ -1,7 +1,6 @@
 package in.erail.service;
 
 import com.google.common.base.Strings;
-import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 
 import in.erail.model.RequestEvent;
@@ -28,7 +27,7 @@ public class BinaryBodyService extends RESTServiceImpl {
     }
 
     ResponseEvent response = new ResponseEvent();
-    response.addHeader(HttpHeaders.CONTENT_TYPE, MediaType.PLAIN_TEXT_UTF_8);
+    response.setMediaType(MediaType.PLAIN_TEXT_UTF_8);
 
     JsonObject jsonBody = new JsonObject(Buffer.buffer(pRequest.getBody()));
 

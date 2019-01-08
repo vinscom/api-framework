@@ -3,12 +3,11 @@ package in.erail.route;
 import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.oauth2.impl.OAuth2AuthProviderImpl;
-import io.vertx.ext.auth.oauth2.impl.OAuth2TokenImpl;
-import io.vertx.reactivex.ext.auth.oauth2.AccessToken;
-import io.vertx.reactivex.ext.auth.oauth2.OAuth2Auth;
+import io.vertx.reactivex.ext.auth.AuthProvider;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -16,41 +15,48 @@ import io.vertx.reactivex.ext.web.RoutingContext;
  */
 public class LoadUserFromAccessTokenRouteBuillder extends AbstractRouterBuilderImpl {
 
-  private OAuth2Auth mOAuth2Auth;
-  
-  public OAuth2Auth getOAuth2Auth() {
-    return mOAuth2Auth;
-  }
-
-  public void setOAuth2Auth(OAuth2Auth pOAuth2Auth) {
-    this.mOAuth2Auth = pOAuth2Auth;
-  }
+  private final Pattern AUTH_TOKEN = Pattern.compile("^Bearer\\s(?<token>.*)");
+  private AuthProvider mAuthProvider;
 
   @Override
   public Router getRouter(Router pRouter) {
     pRouter.route().handler(this::handle);
     return pRouter;
-
   }
 
   public void handle(RoutingContext pRoutingContext) {
-    
+
     if (pRoutingContext.user() == null) {
       String access_token = pRoutingContext.request().getHeader(HttpHeaders.AUTHORIZATION);
       if (!Strings.isNullOrEmpty(access_token)) {
-        OAuth2AuthProviderImpl provider = (OAuth2AuthProviderImpl) getOAuth2Auth().getDelegate();
-        JsonObject accessToken = new JsonObject().put("access_token", access_token.split(" ")[1]);
-        try {
-          OAuth2TokenImpl token = new OAuth2TokenImpl(provider, accessToken);
-          pRoutingContext.setUser(new AccessToken(token));
-        } catch (RuntimeException e) {
-          getLog().error(e);
-          pRoutingContext.fail(401);
-          return;
+        Matcher tokenRegex = AUTH_TOKEN.matcher(access_token);
+        if (tokenRegex.find()) {
+          String token = tokenRegex.group("token");
+          JsonObject authInfo = new JsonObject()
+                  .put("access_token", token)
+                  .put("token_type", "Bearer")
+                  .put("jwt", token);
+          try {
+            pRoutingContext.setUser(getAuthProvider().rxAuthenticate(authInfo).blockingGet());
+          } catch (RuntimeException e) {
+            getLog().error(e);
+            pRoutingContext.fail(401);
+            return;
+          }
+        } else {
+          getLog().warn(() -> "Invalid Auth Header:" + access_token);
         }
       }
     }
     pRoutingContext.next();
+  }
+
+  public AuthProvider getAuthProvider() {
+    return mAuthProvider;
+  }
+
+  public void setAuthProvider(AuthProvider pAuthProvider) {
+    this.mAuthProvider = pAuthProvider;
   }
 
 }
