@@ -25,6 +25,7 @@ import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.Cookie;
 import java.util.Arrays;
@@ -257,19 +258,19 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                         apiFactory.addFailureHandlerByOperationId(service.getOperationId(), (routingContext) -> {
                           routingContext
                                   .response()
-                                  .setStatusCode(routingContext.statusCode())
+                                  .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
                                   .end(generateErrorResponse(routingContext));
                         });
                         apiFactory.setValidationFailureHandler((routingContext) -> {
                           routingContext
                                   .response()
-                                  .setStatusCode(routingContext.statusCode())
+                                  .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
                                   .end(generateErrorResponse(routingContext));
                         });
                         apiFactory.setNotImplementedFailureHandler((routingContext) -> {
                           routingContext
                                   .response()
-                                  .setStatusCode(routingContext.statusCode())
+                                  .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
                                   .end(generateErrorResponse(routingContext));
                         });
                       });
