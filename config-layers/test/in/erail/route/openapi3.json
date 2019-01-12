@@ -11,14 +11,26 @@
         "summary": "Send message to all subscriber of topicName",
         "description": "Send message to all subscriber of topicName",
         "operationId": "API_V1_BROADCAST_SERVICE",
-        "parameters": [{
-          "name": "topicName",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
+        "parameters": [
+          {
+            "name": "topicName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
-        }],
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/broadcastMessage"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Success Response",
@@ -30,41 +42,45 @@
               }
             }
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/broadcastMessage"
-              }
-            }
-          },
-          "required": true
         }
       },
-      "parameters": [{
-        "name": "topicName",
-        "in": "path",
-        "description": "Name of topic on which to broadcast message",
-        "required": true,
-        "schema": {
-          "type": "string"
+      "parameters": [
+        {
+          "name": "topicName",
+          "in": "path",
+          "description": "Name of topic on which to broadcast message",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
         }
-      }]
+      ]
     },
     "/broadcastv2/{topicName}": {
       "post": {
         "summary": "Send message to all subscriber of topicName",
         "description": "Send message to all subscriber of topicName",
         "operationId": "API_V1_BROADCAST_V2_SERVICE",
-        "parameters": [{
-          "name": "topicName",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
+        "parameters": [
+          {
+            "name": "topicName",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
           }
-        }],
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/broadcastMessage"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
           "200": {
             "description": "Success Response",
@@ -76,27 +92,30 @@
               }
             }
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/broadcastMessage"
-              }
-            }
-          },
-          "required": true
         }
       },
-      "parameters": [{
-        "name": "topicName",
-        "in": "path",
-        "description": "Name of topic on which to broadcast message",
-        "required": true,
-        "schema": {
-          "type": "string"
+      "parameters": [
+        {
+          "name": "topicName",
+          "in": "path",
+          "description": "Name of topic on which to broadcast message",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
         }
-      }]
+      ]
+    },
+    "/processcheck": {
+      "get": {
+        "summary": "Check Processor",
+        "operationId": "API_V1_PROCESSOR_CHECK",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
     }
   },
   "components": {
