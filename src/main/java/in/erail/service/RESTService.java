@@ -3,6 +3,7 @@ package in.erail.service;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import io.reactivex.Maybe;
+import io.reactivex.MaybeSource;
 
 /**
  *
@@ -14,9 +15,9 @@ public interface RESTService {
 
   String getServiceUniqueId();
 
-  Maybe<ResponseEvent> process(RequestEvent pRequest);
+  Maybe<ResponseEvent> handleEvent(RequestEvent pRequest);
 
   String getAuthority();
-  
+
   boolean isSecure();
 }

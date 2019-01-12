@@ -28,77 +28,87 @@ public class RequestEvent {
   private byte[] mBody = new byte[0];
   private boolean mIsBase64Encoded = false;
   private Map<String, Object> mPrincipal;
+  private Object mSubject;
 
   public String getResource() {
     return mResource;
   }
 
-  public void setResource(String pResource) {
+  public RequestEvent setResource(String pResource) {
     this.mResource = pResource;
+    return this;
   }
 
   public String getPath() {
     return mPath;
   }
 
-  public void setPath(String pPath) {
+  public RequestEvent setPath(String pPath) {
     this.mPath = pPath;
+    return this;
   }
 
   public HttpMethod getHttpMethod() {
     return mHttpMethod;
   }
 
-  public void setHttpMethod(HttpMethod pHttpMethod) {
+  public RequestEvent setHttpMethod(HttpMethod pHttpMethod) {
     this.mHttpMethod = pHttpMethod;
+    return this;
   }
 
   public Map<String, String> getHeaders() {
     return mHeaders;
   }
 
-  public void setHeaders(Map<String, String> pHeaders) {
+  public RequestEvent setHeaders(Map<String, String> pHeaders) {
     this.mHeaders = pHeaders;
+    return this;
   }
 
   public Map<String, String[]> getMultiValueHeaders() {
     return mMultiValueHeaders;
   }
 
-  public void setMultiValueHeaders(Map<String, String[]> pMultiValueHeaders) {
+  public RequestEvent setMultiValueHeaders(Map<String, String[]> pMultiValueHeaders) {
     this.mMultiValueHeaders = pMultiValueHeaders;
+    return this;
   }
 
   public Map<String, String> getQueryStringParameters() {
     return mQueryStringParameters;
   }
 
-  public void setQueryStringParameters(Map<String, String> pQueryStringParameters) {
+  public RequestEvent setQueryStringParameters(Map<String, String> pQueryStringParameters) {
     this.mQueryStringParameters = pQueryStringParameters;
+    return this;
   }
 
   public Map<String, String[]> getMultiValueQueryStringParameters() {
     return mMultiValueQueryStringParameters;
   }
 
-  public void setMultiValueQueryStringParameters(Map<String, String[]> pMultiValueQueryStringParameters) {
+  public RequestEvent setMultiValueQueryStringParameters(Map<String, String[]> pMultiValueQueryStringParameters) {
     this.mMultiValueQueryStringParameters = pMultiValueQueryStringParameters;
+    return this;
   }
 
   public Map<String, String> getPathParameters() {
     return mPathParameters;
   }
 
-  public void setPathParameters(Map<String, String> pPathParameters) {
+  public RequestEvent setPathParameters(Map<String, String> pPathParameters) {
     this.mPathParameters = pPathParameters;
+    return this;
   }
 
   public Map<String, String> getStageVariables() {
     return mStageVariables;
   }
 
-  public void setStageVariables(Map<String, String> pStageVariables) {
+  public RequestEvent setStageVariables(Map<String, String> pStageVariables) {
     this.mStageVariables = pStageVariables;
+    return this;
   }
 
   @SuppressWarnings("rawtypes")
@@ -107,24 +117,27 @@ public class RequestEvent {
   }
 
   @SuppressWarnings("rawtypes")
-  public void setRequestContext(Map pRequestContext) {
+  public RequestEvent setRequestContext(Map pRequestContext) {
     this.mRequestContext = pRequestContext;
+    return this;
   }
 
   public boolean isIsBase64Encoded() {
     return mIsBase64Encoded;
   }
 
-  public void setIsBase64Encoded(boolean pIsBase64Encoded) {
+  public RequestEvent setIsBase64Encoded(boolean pIsBase64Encoded) {
     this.mIsBase64Encoded = pIsBase64Encoded;
+    return this;
   }
 
   public byte[] getBody() {
     return mBody;
   }
 
-  public void setBody(byte[] pBody) {
+  public RequestEvent setBody(byte[] pBody) {
     this.mBody = pBody;
+    return this;
   }
 
   public String bodyAsString() {
@@ -138,13 +151,23 @@ public class RequestEvent {
     return mPrincipal;
   }
 
-  public void setPrincipal(Map<String, Object> pPrincipal) {
+  public RequestEvent setPrincipal(Map<String, Object> pPrincipal) {
     this.mPrincipal = pPrincipal;
+    return this;
   }
 
   @Override
   public String toString() {
     return JsonObject.mapFrom(this).toString();
+  }
+
+  public Object getSubject() {
+    return mSubject;
+  }
+
+  public RequestEvent setSubject(Object pSubject) {
+    this.mSubject = pSubject;
+    return this;
   }
 
 }
