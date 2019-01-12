@@ -101,7 +101,7 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<R
     return process(pRequest);
   }
 
-  abstract MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest);
+  public abstract MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest);
 
   public Maybe<ResponseEvent> postProcess(Maybe<ResponseEvent> pResponse) {
 
