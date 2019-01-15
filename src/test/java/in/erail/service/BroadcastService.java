@@ -2,6 +2,7 @@ package in.erail.service;
 
 import com.google.common.base.Strings;
 import com.google.common.net.MediaType;
+import in.erail.model.Event;
 
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
@@ -18,15 +19,16 @@ import io.vertx.core.json.JsonObject;
 public class BroadcastService extends RESTServiceImpl {
 
   @Override
-  public MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest) {
-    return pRequest.map(this::handle);
+  public MaybeSource<Event> process(Maybe<Event> pRequest) {
+    return pRequest.doOnSuccess(e -> handle(e.getRequest(), e.getResponse()));
   }
 
-  protected ResponseEvent handle(RequestEvent pRequest) {
+  protected void handle(RequestEvent pRequest, ResponseEvent pRespone) {
     String topicName = pRequest.getPathParameters().get(TestConstants.Service.Broadcast.APIMessage.PARAM_TOPIC_NAME);
 
     if (Strings.isNullOrEmpty(topicName)) {
-      return new ResponseEvent().setStatusCode(HttpResponseStatus.BAD_REQUEST.code());
+      pRespone.setStatusCode(HttpResponseStatus.BAD_REQUEST.code());
+      return;
     }
 
     JsonObject bodyJson = new JsonObject(pRequest.bodyAsString());
@@ -37,10 +39,7 @@ public class BroadcastService extends RESTServiceImpl {
 
     getLog().debug(() -> String.format("Message[%s] published on [%s]", bodyJson.toString(), topicName));
 
-    ResponseEvent response = new ResponseEvent();
-    response.setBody(TestConstants.Service.Message.successMessage().toString().getBytes());
-    response.setMediaType(MediaType.JSON_UTF_8);
-
-    return response;
+    pRespone.setBody(TestConstants.Service.Message.successMessage().toString().getBytes());
+    pRespone.setMediaType(MediaType.JSON_UTF_8);
   }
 }

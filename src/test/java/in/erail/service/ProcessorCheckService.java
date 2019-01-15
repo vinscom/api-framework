@@ -1,6 +1,7 @@
 package in.erail.service;
 
 import com.google.common.net.MediaType;
+import in.erail.model.Event;
 
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
@@ -13,14 +14,13 @@ import io.reactivex.MaybeSource;
  */
 public class ProcessorCheckService extends RESTServiceImpl {
 
-  @Override
-  public MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest) {
-    return pRequest.map(this::handle);
+@Override
+  public MaybeSource<Event> process(Maybe<Event> pRequest) {
+    return pRequest.doOnSuccess(e -> handle(e.getRequest(), e.getResponse()));
   }
 
-  protected ResponseEvent handle(RequestEvent pRequest) {
-    ResponseEvent response = new ResponseEvent();
-    response.setMediaType(MediaType.PLAIN_TEXT_UTF_8);
-    return response.setBody(pRequest.getSubject().toString().getBytes());
+  protected void handle(RequestEvent pRequest, ResponseEvent pRespone) {
+    pRespone.setMediaType(MediaType.PLAIN_TEXT_UTF_8);
+    pRespone.setBody(pRequest.getSubject().toString().getBytes());
   }
 }
