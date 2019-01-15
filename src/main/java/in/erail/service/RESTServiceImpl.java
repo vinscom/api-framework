@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
 import org.apache.logging.log4j.Logger;
 import in.erail.glue.annotation.StartService;
+import in.erail.model.Event;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -22,9 +23,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  *
  * @author vinay
  */
-public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<RequestEvent, ResponseEvent> {
-
-  private static final ResponseEvent DEFAULT_REPONSE_EVENT = new ResponseEvent();
+public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<Event, Event> {
 
   private String mOperationId;
   private String mServiceUniqueId;
@@ -32,15 +31,19 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<R
   private boolean mEnable = false;
   private Logger mLog;
   private Scheduler mScheduler = Schedulers.io();
-  private ResponseEvent mDefaultResponseEvent = DEFAULT_REPONSE_EVENT;
+  private Event mDefaultEvent;
   private boolean mSecure = false;
   private String mAuthority;
   private Class<? extends RequestEvent> mRequestEventClass = RequestEvent.class;
-  private MaybeTransformer<RequestEvent, RequestEvent> mPreProcessProcessors[];
-  private MaybeTransformer<ResponseEvent, ResponseEvent> mPostProcessProcessors[];
+  private Class<? extends ResponseEvent> mResponseEventClass = ResponseEvent.class;
+  private MaybeTransformer<Event, Event> mPreProcessProcessors[];
+  private MaybeTransformer<Event, Event> mPostProcessProcessors[];
 
   @StartService
-  public void start() {
+  public void start() throws InstantiationException, IllegalAccessException {
+
+    mDefaultEvent = new Event(getRequestEventClass().newInstance(), getResponseEventClass().newInstance());
+
     if (mEnable) {
       getVertx()
               .eventBus()
@@ -60,12 +63,13 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<R
     return Single
             .just(pMessage)
             .map(m -> pMessage.body().mapTo(getRequestEventClass()))
+            .map(this::createEvent)
             .flatMapMaybe(this::handleEvent)
-            .toSingle(getDefaultResponseEvent())
-            .map(resp -> JsonObject.mapFrom(resp))
+            .toSingle(getDefaultEvent())
+            .map(resp -> JsonObject.mapFrom(resp.getResponse()))
             .doOnSuccess(resp -> pMessage.reply(resp))
             .doOnError(err -> {
-              ResponseEvent resp = new ResponseEvent()
+              ResponseEvent resp = getResponseEventClass().newInstance()
                       .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
                       .setMediaType(MediaType.PLAIN_TEXT_UTF_8)
                       .setBody(ExceptionUtils.getMessage(err).getBytes());
@@ -76,43 +80,30 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<R
   }
 
   @Override
-  public Maybe<ResponseEvent> handleEvent(RequestEvent pRequest) {
-
+  public Maybe<Event> handleEvent(Event pEvent) {
     return Maybe
-            .just(pRequest)
-            .compose(this::preProcess)
+            .just(pEvent)
+            .compose(composePipeline(getPreProcessProcessors()))
             .compose(this)
-            .compose(this::postProcess);
+            .compose(composePipeline(getPostProcessProcessors()));
   }
 
-  public MaybeSource<RequestEvent> preProcess(Maybe<RequestEvent> pRequest) {
+  protected MaybeTransformer<Event, Event> composePipeline(MaybeTransformer<Event, Event>[] pProcessors) {
 
-    if (getPreProcessProcessors() == null || getPreProcessProcessors().length == 0) {
-      return pRequest;
+    if (pProcessors == null || pProcessors.length == 0) {
+      return (Maybe<Event> pEvent) -> pEvent;
     }
 
-    return Arrays
-            .stream(getPreProcessProcessors())
-            .reduce(pRequest, (acc, p) -> acc.compose(p), (a, b) -> a);
+    return (Maybe<Event> pEvent) -> Arrays
+            .stream(pProcessors)
+            .reduce(pEvent, (acc, p) -> acc.compose(p), (a, b) -> a);
   }
 
   @Override
-  public MaybeSource<ResponseEvent> apply(Maybe<RequestEvent> pRequest) {
+  public final MaybeSource<Event> apply(Maybe<Event> pRequest) {
     return process(pRequest);
   }
-
-  public abstract MaybeSource<ResponseEvent> process(Maybe<RequestEvent> pRequest);
-
-  public Maybe<ResponseEvent> postProcess(Maybe<ResponseEvent> pResponse) {
-
-    if (getPostProcessProcessors() == null || getPostProcessProcessors().length == 0) {
-      return pResponse;
-    }
-
-    return Arrays
-            .stream(getPostProcessProcessors())
-            .reduce(pResponse, (acc, p) -> acc.compose(p), (a, b) -> a);
-  }
+  public abstract MaybeSource<Event> process(Maybe<Event> pEvent);
 
   @Override
   public String getOperationId() {
@@ -164,12 +155,12 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<R
     this.mScheduler = pScheduler;
   }
 
-  public ResponseEvent getDefaultResponseEvent() {
-    return mDefaultResponseEvent;
+  public Event getDefaultEvent() {
+    return mDefaultEvent;
   }
 
-  public void setDefaultResponseEvent(ResponseEvent pDefaultResponseEvent) {
-    this.mDefaultResponseEvent = pDefaultResponseEvent;
+  public void setDefaultEvent(Event pDefaultEvent) {
+    this.mDefaultEvent = pDefaultEvent;
   }
 
   @Override
@@ -190,6 +181,7 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<R
     this.mAuthority = pAuthority;
   }
 
+  @Override
   public Class<? extends RequestEvent> getRequestEventClass() {
     return mRequestEventClass;
   }
@@ -198,19 +190,28 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<R
     this.mRequestEventClass = pRequestEventClass;
   }
 
-  public MaybeTransformer<RequestEvent, RequestEvent>[] getPreProcessProcessors() {
+  @Override
+  public Class<? extends ResponseEvent> getResponseEventClass() {
+    return mResponseEventClass;
+  }
+
+  public void setResponseEventClass(Class<? extends ResponseEvent> pResponseEventClass) {
+    this.mResponseEventClass = pResponseEventClass;
+  }
+
+  public MaybeTransformer<Event, Event>[] getPreProcessProcessors() {
     return mPreProcessProcessors;
   }
 
-  public void setPreProcessProcessors(MaybeTransformer<RequestEvent, RequestEvent>[] pPreProcessProcessors) {
+  public void setPreProcessProcessors(MaybeTransformer<Event, Event>[] pPreProcessProcessors) {
     this.mPreProcessProcessors = pPreProcessProcessors;
   }
 
-  public MaybeTransformer<ResponseEvent, ResponseEvent>[] getPostProcessProcessors() {
+  public MaybeTransformer<Event, Event>[] getPostProcessProcessors() {
     return mPostProcessProcessors;
   }
 
-  public void setPostProcessProcessors(MaybeTransformer<ResponseEvent, ResponseEvent>[] pPostProcessProcessors) {
+  public void setPostProcessProcessors(MaybeTransformer<Event, Event>[] pPostProcessProcessors) {
     this.mPostProcessProcessors = pPostProcessProcessors;
   }
 

@@ -1,6 +1,6 @@
 package in.erail.service.processor;
 
-import in.erail.model.RequestEvent;
+import in.erail.model.Event;
 import io.reactivex.Maybe;
 import io.reactivex.MaybeSource;
 import io.reactivex.MaybeTransformer;
@@ -10,13 +10,16 @@ import java.util.Optional;
  *
  * @author vinay
  */
-public class LoadSubjectProcessor implements MaybeTransformer<RequestEvent, RequestEvent> {
+public class LoadSubjectProcessor implements MaybeTransformer<Event, Event> {
 
   private String mMessage;
 
   @Override
-  public MaybeSource<RequestEvent> apply(Maybe<RequestEvent> pRequest) {
-    return pRequest.map(e -> e.setSubject(Optional.ofNullable(e.getSubject()).orElse("") + getMessage()));
+  public MaybeSource<Event> apply(Maybe<Event> pEvent) {
+    return pEvent.map(e -> {
+      e.getRequest().setSubject(Optional.ofNullable(e.getRequest().getSubject()).orElse("") + getMessage());
+      return e;
+    });
   }
 
   public String getMessage() {

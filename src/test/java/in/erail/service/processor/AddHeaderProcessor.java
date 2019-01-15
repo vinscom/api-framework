@@ -1,25 +1,27 @@
 package in.erail.service.processor;
 
-import in.erail.model.ResponseEvent;
+import java.util.Optional;
+
+import in.erail.model.Event;
 import io.reactivex.Maybe;
 import io.reactivex.MaybeSource;
 import io.reactivex.MaybeTransformer;
-import java.util.Optional;
 
 /**
  *
  * @author vinay
  */
-public class AddHeaderProcessor implements MaybeTransformer<ResponseEvent, ResponseEvent> {
+public class AddHeaderProcessor implements MaybeTransformer<Event, Event> {
 
   private String mMessage;
 
   @Override
-  public MaybeSource<ResponseEvent> apply(Maybe<ResponseEvent> pResponse) {
-    return pResponse.map(r -> {
-      String msg = Optional.ofNullable(r.headerValue("ProcessorHeader")).orElse("") + getMessage();
-      r.removeHeader("ProcessorHeader");
-      return r.addHeader("ProcessorHeader", msg);
+  public MaybeSource<Event> apply(Maybe<Event> pEvent) {
+    return pEvent.map(r -> {
+      String msg = Optional.ofNullable(r.getResponse().headerValue("ProcessorHeader")).orElse("") + getMessage();
+      r.getResponse().removeHeader("ProcessorHeader");
+      r.getResponse().addHeader("ProcessorHeader", msg);
+      return r;
     });
   }
 
