@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>in.erail</groupId>
     <artifactId>api-framework</artifactId>
-    <version>2.4.3</version>
+    <version>2.4.4</version>
     <packaging>jar</packaging>
     <developers>
         <developer>
@@ -57,6 +57,12 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

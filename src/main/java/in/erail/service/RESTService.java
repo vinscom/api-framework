@@ -1,5 +1,6 @@
 package in.erail.service;
 
+import in.erail.model.Event;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
 import io.reactivex.Maybe;
@@ -14,9 +15,21 @@ public interface RESTService {
 
   String getServiceUniqueId();
 
-  Maybe<ResponseEvent> process(RequestEvent pRequest);
+  default Class<? extends RequestEvent> getRequestEventClass() {
+    return RequestEvent.class;
+  }
+
+  default Class<? extends ResponseEvent> getResponseEventClass() {
+    return ResponseEvent.class;
+  }
+
+  default Event createEvent(RequestEvent pRequest) throws InstantiationException, IllegalAccessException {
+    return new Event(pRequest, getResponseEventClass().newInstance());
+  }
+
+  Maybe<Event> handleEvent(Event pEvent);
 
   String getAuthority();
-  
+
   boolean isSecure();
 }

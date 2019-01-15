@@ -85,13 +85,14 @@ public class ResponseEvent {
                       a.addAll(b);
                       return a;
                     });
-    
+
     return this;
   }
 
   /**
    * Return copy of headers map
-   * @return 
+   *
+   * @return
    */
   public Map<String, String[]> getMultiValueHeaders() {
 
@@ -135,7 +136,8 @@ public class ResponseEvent {
 
   /**
    * Return copy of Header Map
-   * @return 
+   *
+   * @return
    */
   public Map<String, String> getHeaders() {
 
@@ -164,6 +166,7 @@ public class ResponseEvent {
 
   /**
    * Predefined Content Type
+   *
    * @param pMediaType
    * @return Response Event
    */
@@ -181,9 +184,13 @@ public class ResponseEvent {
     return mMultiValueHeaders.get(pHeaderName);
   }
 
+  public void removeHeader(String pHeaderName) {
+    mMultiValueHeaders.remove(pHeaderName);
+  }
+
   @Override
   public String toString() {
     return JsonObject.mapFrom(this).toString();
   }
-  
+
 }
