@@ -49,7 +49,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private boolean mSecurityEnable = true;
   private HashMap<String, Metered> mMetrics = new HashMap<>();
   private MetricRegistry mMetricRegistry;
-
+  private String mRequestIdHeaderName = HEADER_X_REQUEST_ID;
+  
   public File getOpenAPI3File() {
     return mOpenAPI3File;
   }
@@ -86,14 +87,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     Timer.Context timerCtx = ((Timer) getMetrics().get(pServiceUniqueId)).time();
 
-    String requestId = pRequestContext.request().getHeader(HEADER_X_REQUEST_ID);
+    String requestId = pRequestContext.request().getHeader(getRequestIdHeaderName());
 
     if (Strings.isNullOrEmpty(requestId)) {
       requestId = UUID.randomUUID().toString();
-      pRequestContext.request().headers().add(HEADER_X_REQUEST_ID, UUID.randomUUID().toString());
+      pRequestContext.request().headers().add(getRequestIdHeaderName(), UUID.randomUUID().toString());
     }
 
-    pRequestContext.response().putHeader(HEADER_X_REQUEST_ID, requestId);
+    pRequestContext.response().putHeader(getRequestIdHeaderName(), requestId);
 
     getVertx()
             .eventBus()
@@ -330,6 +331,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   public void setMetricRegistry(MetricRegistry pMetricRegistry) {
     this.mMetricRegistry = pMetricRegistry;
+  }
+
+  public String getRequestIdHeaderName() {
+    return mRequestIdHeaderName;
+  }
+
+  public void setRequestIdHeaderName(String pRequestIdHeaderName) {
+    this.mRequestIdHeaderName = pRequestIdHeaderName;
   }
 
 }
