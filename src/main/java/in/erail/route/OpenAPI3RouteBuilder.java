@@ -4,6 +4,7 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import java.io.File;
@@ -31,6 +32,7 @@ import io.vertx.reactivex.ext.web.Cookie;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Optional;
+import java.util.UUID;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
@@ -39,6 +41,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
  */
 public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
+  private static final String HEADER_X_REQUEST_ID = "X-Request-ID";
   private static final String FAIL_SUFFIX = ".fail";
   private RESTService[] mServices;
   private File mOpenAPI3File;
@@ -46,7 +49,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private boolean mSecurityEnable = true;
   private HashMap<String, Metered> mMetrics = new HashMap<>();
   private MetricRegistry mMetricRegistry;
-
+  private String mRequestIdHeaderName = HEADER_X_REQUEST_ID;
+  
   public File getOpenAPI3File() {
     return mOpenAPI3File;
   }
@@ -82,6 +86,15 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   public void process(RoutingContext pRequestContext, String pServiceUniqueId) {
 
     Timer.Context timerCtx = ((Timer) getMetrics().get(pServiceUniqueId)).time();
+
+    String requestId = pRequestContext.request().getHeader(getRequestIdHeaderName());
+
+    if (Strings.isNullOrEmpty(requestId)) {
+      requestId = UUID.randomUUID().toString();
+      pRequestContext.request().headers().add(getRequestIdHeaderName(), UUID.randomUUID().toString());
+    }
+
+    pRequestContext.response().putHeader(getRequestIdHeaderName(), requestId);
 
     getVertx()
             .eventBus()
@@ -318,6 +331,14 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
   public void setMetricRegistry(MetricRegistry pMetricRegistry) {
     this.mMetricRegistry = pMetricRegistry;
+  }
+
+  public String getRequestIdHeaderName() {
+    return mRequestIdHeaderName;
+  }
+
+  public void setRequestIdHeaderName(String pRequestIdHeaderName) {
+    this.mRequestIdHeaderName = pRequestIdHeaderName;
   }
 
 }
