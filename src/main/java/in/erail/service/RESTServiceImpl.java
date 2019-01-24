@@ -33,7 +33,7 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<E
   private Scheduler mScheduler = Schedulers.io();
   private Event mDefaultEvent;
   private boolean mSecure = false;
-  private String mAuthority;
+  private String[] mAuthority;
   private Class<? extends RequestEvent> mRequestEventClass = RequestEvent.class;
   private Class<? extends ResponseEvent> mResponseEventClass = ResponseEvent.class;
   private MaybeTransformer<Event, Event> mPreProcessProcessors[];
@@ -173,11 +173,11 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<E
   }
 
   @Override
-  public String getAuthority() {
+  public String[] getAuthority() {
     return mAuthority;
   }
 
-  public void setAuthority(String pAuthority) {
+  public void setAuthority(String[] pAuthority) {
     this.mAuthority = pAuthority;
   }
 

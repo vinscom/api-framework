@@ -29,7 +29,7 @@ public interface RESTService {
 
   Maybe<Event> handleEvent(Event pEvent);
 
-  String getAuthority();
+  String[] getAuthority();
 
   boolean isSecure();
 }

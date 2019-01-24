@@ -27,6 +27,7 @@ import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import in.erail.service.RESTService;
 import io.netty.handler.codec.http.HttpResponseStatus;
+import io.reactivex.Observable;
 import io.vertx.reactivex.core.buffer.Buffer;
 import io.vertx.reactivex.ext.web.Cookie;
 import java.util.Arrays;
@@ -50,7 +51,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   private HashMap<String, Metered> mMetrics = new HashMap<>();
   private MetricRegistry mMetricRegistry;
   private String mRequestIdHeaderName = HEADER_X_REQUEST_ID;
-  
+
   public File getOpenAPI3File() {
     return mOpenAPI3File;
   }
@@ -254,14 +255,29 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                               return;
                             }
 
-                            routingContext.user().isAuthorized(service.getAuthority(), (event) -> {
-                              boolean authSuccess = event.succeeded() ? event.result() : false;
-                              if (authSuccess) {
-                                process(routingContext, service.getServiceUniqueId());
-                              } else {
-                                routingContext.fail(401);
-                              }
-                            });
+                            Optional<String[]> authorities = Optional.ofNullable(service.getAuthority());
+
+                            if (authorities.isPresent()) {
+                              Observable
+                                      .fromArray(authorities.get())
+                                      .flatMapSingle(a -> routingContext.user().rxIsAuthorized(a))
+                                      .filter(a -> a)
+                                      .firstElement()
+                                      .subscribe((success) -> {
+                                        getLog().trace(() -> "Request is authorized. Processing Message:" + service.getOperationId());
+                                        process(routingContext, service.getServiceUniqueId());
+                                      }, (err) -> {
+                                        getLog().error(() -> "Error processing serive message", err);
+                                        routingContext.fail(err);
+                                      }, () -> {
+                                        getLog().warn(() -> "You are not authorized to access service:" + service.getOperationId() + ":" + routingContext.toString());
+                                        routingContext.fail(401);
+                                      });
+                            } else {
+                              getLog().error(() -> "Service marked as secure, but, no authority defined at service level:" + service.getOperationId());
+                              routingContext.fail(401);
+                            }
+
                           } else {
                             getLog().warn("Security disabled for " + service.getServiceUniqueId());
                             process(routingContext, service.getServiceUniqueId());
@@ -269,18 +285,35 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                         });
 
                         apiFactory.addFailureHandlerByOperationId(service.getOperationId(), (routingContext) -> {
+                          int respStatusCode = routingContext.statusCode();
+                          if (respStatusCode == -1) {
+                            respStatusCode = 400;
+                          }
+
+                          getLog().debug(() -> "API Failure Handle called:" + service.getOperationId() + ":" + generateErrorResponse(routingContext));
+
                           routingContext
                                   .response()
-                                  .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
+                                  .setStatusCode(respStatusCode)
                                   .end(generateErrorResponse(routingContext));
                         });
                         apiFactory.setValidationFailureHandler((routingContext) -> {
+                          int respStatusCode = routingContext.statusCode();
+                          if (respStatusCode == -1) {
+                            respStatusCode = 400;
+                          }
+
+                          getLog().debug(() -> "API Validation Failer Handle called:" + service.getOperationId() + ":" + generateErrorResponse(routingContext));
+
                           routingContext
                                   .response()
-                                  .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
+                                  .setStatusCode(respStatusCode)
                                   .end(generateErrorResponse(routingContext));
                         });
                         apiFactory.setNotImplementedFailureHandler((routingContext) -> {
+
+                          getLog().debug(() -> "API not implemented:" + service.getOperationId() + ":" + generateErrorResponse(routingContext));
+
                           routingContext
                                   .response()
                                   .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
