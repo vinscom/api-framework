@@ -6,7 +6,7 @@ import in.erail.common.FrameworkConstants;
 import io.netty.handler.codec.http.HttpScheme;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.ext.auth.oauth2.OAuth2Auth;
+import io.vertx.reactivex.ext.auth.AuthProvider;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.Session;
@@ -14,7 +14,7 @@ import io.vertx.reactivex.ext.web.Session;
 public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
   private String mCallbackURI;
-  private OAuth2Auth mOAuth2Auth;
+  private AuthProvider mAuthProvider;
   private String mQueryParamAuthCode;
   private boolean mEnableProxy;
   private String mSuccessPath;
@@ -22,31 +22,33 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
   public void handle(RoutingContext pRoutingCoutext) {
     JsonObject tokenConfig = getTokenConfig(pRoutingCoutext);
-    getOAuth2Auth().getDelegate().authenticate(tokenConfig, (response) -> {
-      if (response.succeeded()) {
+    
+    getAuthProvider()
+            .rxAuthenticate(tokenConfig)
+            .doOnSuccess((u) -> {
+              Session session = pRoutingCoutext.session().regenerateId();
+              session.put(FrameworkConstants.Session.PRINCIPAL, u);
 
-        Session session = pRoutingCoutext.session().regenerateId();
-        session.put(FrameworkConstants.Session.PRINCIPAL, response.result().principal());
+              getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
 
-        getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
+              pRoutingCoutext
+                      .response()
+                      .putHeader(HttpHeaders.LOCATION, getSuccessURL(pRoutingCoutext))
+                      .setStatusCode(302)
+                      .end();
+            })
+            .doOnError((err) -> {
+              getLog().error(err);
 
-        pRoutingCoutext
-                .response()
-                .putHeader(HttpHeaders.LOCATION, getSuccessURL(pRoutingCoutext))
-                .setStatusCode(302)
-                .end();
-      } else {
-        getLog().error(response.cause());
+              getLog().debug(() -> "Fail URL:" + getFailURL(pRoutingCoutext));
 
-        getLog().debug(() -> "Fail URL:" + getFailURL(pRoutingCoutext));
-
-        pRoutingCoutext
-                .response()
-                .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
-                .setStatusCode(302)
-                .end();
-      }
-    });
+              pRoutingCoutext
+                      .response()
+                      .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
+                      .setStatusCode(302)
+                      .end();
+            })
+            .blockingGet();
   }
 
   private String baseURL(RoutingContext pRoutingContext) {
@@ -103,14 +105,6 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
             .put("redirect_uri", baseURL(pRoutingContext) + getCallbackURI());
   }
 
-  public OAuth2Auth getOAuth2Auth() {
-    return mOAuth2Auth;
-  }
-
-  public void setOAuth2Auth(OAuth2Auth pOAuth2Auth) {
-    this.mOAuth2Auth = pOAuth2Auth;
-  }
-
   public String getQueryParamAuthCode() {
     return mQueryParamAuthCode;
   }
@@ -155,6 +149,14 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
   public void setFailPath(String pFailPath) {
     this.mFailPath = pFailPath;
+  }
+
+  public AuthProvider getAuthProvider() {
+    return mAuthProvider;
+  }
+
+  public void setAuthProvider(AuthProvider pAuthProvider) {
+    this.mAuthProvider = pAuthProvider;
   }
 
 }
