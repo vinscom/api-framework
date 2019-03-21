@@ -3,34 +3,31 @@ package in.erail.service;
 import in.erail.glue.Glue;
 import io.reactivex.Observable;
 import io.vertx.core.spi.cluster.ClusterManager;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.Timeout;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.junit5.Checkpoint;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
 import io.vertx.reactivex.core.Vertx;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import org.junit.Test;
-import org.junit.Rule;
-import org.junit.runner.RunWith;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 /**
  *
  * @author vinay
  */
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class SingletonServiceImplTest {
 
-  @Rule
-  public Timeout rule = Timeout.seconds(2000);
-
   @Test
-  public void testStart(TestContext context) throws InterruptedException, ExecutionException {
-
-    Async async = context.async(2);
+  public void testStart(VertxTestContext testContext) throws InterruptedException, ExecutionException {
 
     Vertx vertx = Glue.instance().resolve("/io/vertx/core/Vertx");
     ClusterManager cm = Glue.instance().resolve("/io/vertx/spi/cluster/ClusterManager");
+
+    Checkpoint firstCP = testContext.checkpoint();
+    Checkpoint secondCP = testContext.checkpoint();
 
     vertx
             .sharedData()
@@ -48,8 +45,8 @@ public class SingletonServiceImplTest {
                                   return m.rxGet("DummySingletonService");
                                 })
                                 .doOnSuccess((nodeId) -> {
-                                  context.assertNotEquals(cm.getNodeID(), nodeId);  //Validate after starting this service. Control is still with other node
-                                  async.countDown();
+                                  assertNotEquals(cm.getNodeID(), nodeId);  //Validate after starting this service. Control is still with other node
+                                  firstCP.flag();
                                 })
                                 .subscribe((nodeId) -> {
                                   service.nodeLeft("NodeDownID"); //Trigger remote node leave
@@ -63,9 +60,9 @@ public class SingletonServiceImplTest {
                                                       return m2.rxGet("DummySingletonService");
                                                     })
                                                     .subscribe((updatedNodeId) -> {
-                                                      context.assertEquals(cm.getNodeID(), updatedNodeId);
-                                                      context.assertEquals(service.getRecorder().size(), 1);
-                                                      async.countDown();
+                                                      assertEquals(cm.getNodeID(), updatedNodeId);
+                                                      assertEquals(service.getRecorder().size(), 1);
+                                                      secondCP.flag();
                                                     });
                                           });
                                 });
