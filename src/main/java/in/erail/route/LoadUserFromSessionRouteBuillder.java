@@ -27,7 +27,6 @@ public class LoadUserFromSessionRouteBuillder extends AbstractRouterBuilderImpl 
         pRoutingContext.setUser(principal);
       } else {
         getLog().debug("User not found");
-        pRoutingContext.fail(401);
       }
     }
     pRoutingContext.next();

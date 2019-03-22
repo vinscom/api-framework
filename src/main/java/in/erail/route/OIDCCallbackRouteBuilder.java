@@ -22,13 +22,12 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
   public void handle(RoutingContext pRoutingCoutext) {
     JsonObject tokenConfig = getTokenConfig(pRoutingCoutext);
-    
+
     getAuthProvider()
             .rxAuthenticate(tokenConfig)
             .doOnSuccess((u) -> {
               Session session = pRoutingCoutext.session().regenerateId();
-              session.put(FrameworkConstants.Session.PRINCIPAL, u);
-
+              session.put(FrameworkConstants.Session.PRINCIPAL, u.getDelegate());
               getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
 
               pRoutingCoutext
@@ -39,7 +38,6 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
             })
             .doOnError((err) -> {
               getLog().error(err);
-
               getLog().debug(() -> "Fail URL:" + getFailURL(pRoutingCoutext));
 
               pRoutingCoutext
