@@ -22,13 +22,15 @@ public class LoadUserFromSessionRouteBuillder extends AbstractRouterBuilderImpl 
     Session session = pRoutingContext.session();
 
     if (session != null) {
-      User principal = session.get(FrameworkConstants.Session.PRINCIPAL);
-      if (principal != null) {
-        pRoutingContext.setUser(principal);
-      } else {
+      io.vertx.ext.auth.User user = session.get(FrameworkConstants.Session.PRINCIPAL);
+
+      if (user == null) {
         getLog().debug("User not found");
+      } else {
+        pRoutingContext.setUser(new User(user));
       }
     }
+    
     pRoutingContext.next();
   }
 
