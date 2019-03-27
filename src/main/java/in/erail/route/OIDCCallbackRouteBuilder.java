@@ -21,12 +21,34 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
   private String mFailPath;
 
   public void handle(RoutingContext pRoutingCoutext) {
+
+    if (getAuthProvider() == null) {
+      getLog().warn("Auth provider not set");
+      return;
+    }
+
     JsonObject tokenConfig = getTokenConfig(pRoutingCoutext);
 
     getAuthProvider()
             .rxAuthenticate(tokenConfig)
             .doOnSuccess((u) -> {
-              Session session = pRoutingCoutext.session().regenerateId();
+              Session session = pRoutingCoutext.session();
+
+              if (session == null) {
+
+                getLog().error(() -> "Session not found");
+
+                pRoutingCoutext
+                        .response()
+                        .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
+                        .setStatusCode(302)
+                        .end();
+                return;
+              }
+
+              session = session.regenerateId();
+
+              //Session session = pRoutingCoutext.session().regenerateId();
               session.put(FrameworkConstants.Session.PRINCIPAL, u.getDelegate());
               getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
 
@@ -46,7 +68,7 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
                       .setStatusCode(302)
                       .end();
             })
-            .blockingGet();
+            .subscribe();
   }
 
   private String baseURL(RoutingContext pRoutingContext) {
@@ -98,9 +120,14 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
     String authCode = pRoutingContext.request().params().get(getQueryParamAuthCode());
 
-    return new JsonObject()
+    JsonObject config = new JsonObject()
             .put("code", authCode)
             .put("redirect_uri", baseURL(pRoutingContext) + getCallbackURI());
+
+    getLog().debug(() -> "Auth Config:" + config);
+
+    return config;
+
   }
 
   public String getQueryParamAuthCode() {

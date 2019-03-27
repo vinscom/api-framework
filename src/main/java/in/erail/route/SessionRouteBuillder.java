@@ -31,6 +31,7 @@ public class SessionRouteBuillder extends AbstractRouterBuilderImpl {
     route.handler(CookieHandler.create());
     if (isEnableSession()) {
       route.handler(SessionHandler.create(getSessionStore()));
+      getLog().info("Session Store Enabled");
     }
     return pRouter;
   }
