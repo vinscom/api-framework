@@ -17,14 +17,15 @@ public class OpenIDConnectAuthFactory {
 
   private Vertx mVertx;
   private OAuth2Auth mAuthProvider;
-  private Class mOpenIDConnectAuthClass;
+  private Class<? extends OpenIDConnectAuth> mOpenIDConnectAuthClass;
   private OAuth2ClientOptions mOAuth2ClientOptions;
   private Logger mLog;
 
   public OAuth2Auth create() throws NoSuchMethodException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
     if (mAuthProvider == null) {
       Method m = getOpenIDConnectAuthClass().getMethod("rxDiscover", Vertx.class, OAuth2ClientOptions.class);
-      Single<OAuth2Auth> auth = (Single<OAuth2Auth>) m.invoke(null, getVertx(), getOAuth2ClientOptions());
+      @SuppressWarnings("unchecked")
+			Single<OAuth2Auth> auth = (Single<OAuth2Auth>) m.invoke(null, getVertx(), getOAuth2ClientOptions());
       mAuthProvider = auth
               .subscribeOn(Schedulers.io())
               .doOnSuccess(a -> getLog().debug(() -> "AuthProvider Created Successfully"))
@@ -49,11 +50,11 @@ public class OpenIDConnectAuthFactory {
     this.mLog = pLog;
   }
 
-  public Class getOpenIDConnectAuthClass() {
+  public Class<? extends OpenIDConnectAuth> getOpenIDConnectAuthClass() {
     return mOpenIDConnectAuthClass;
   }
 
-  public void setOpenIDConnectAuthClass(Class pOpenIDConnectAuthClass) {
+  public void setOpenIDConnectAuthClass(Class<? extends OpenIDConnectAuth> pOpenIDConnectAuthClass) {
     this.mOpenIDConnectAuthClass = pOpenIDConnectAuthClass;
   }
 
