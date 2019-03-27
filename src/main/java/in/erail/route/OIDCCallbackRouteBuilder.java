@@ -6,7 +6,7 @@ import in.erail.common.FrameworkConstants;
 import io.netty.handler.codec.http.HttpScheme;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.reactivex.ext.auth.oauth2.OAuth2Auth;
+import io.vertx.reactivex.ext.auth.AuthProvider;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.Session;
@@ -14,39 +14,61 @@ import io.vertx.reactivex.ext.web.Session;
 public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
   private String mCallbackURI;
-  private OAuth2Auth mOAuth2Auth;
+  private AuthProvider mAuthProvider;
   private String mQueryParamAuthCode;
   private boolean mEnableProxy;
   private String mSuccessPath;
   private String mFailPath;
 
   public void handle(RoutingContext pRoutingCoutext) {
+
+    if (getAuthProvider() == null) {
+      getLog().warn("Auth provider not set");
+      return;
+    }
+
     JsonObject tokenConfig = getTokenConfig(pRoutingCoutext);
-    getOAuth2Auth().getDelegate().authenticate(tokenConfig, (response) -> {
-      if (response.succeeded()) {
 
-        Session session = pRoutingCoutext.session().regenerateId();
-        session.put(FrameworkConstants.Session.PRINCIPAL, response.result().principal());
+    getAuthProvider()
+            .rxAuthenticate(tokenConfig)
+            .doOnSuccess((u) -> {
+              Session session = pRoutingCoutext.session();
 
-        getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
+              if (session == null) {
 
-        pRoutingCoutext
-                .response()
-                .putHeader(HttpHeaders.LOCATION, getSuccessURL(pRoutingCoutext))
-                .setStatusCode(302)
-                .end();
-      } else {
-        getLog().error(response.cause());
+                getLog().error(() -> "Session not found");
 
-        getLog().debug(() -> "Fail URL:" + getFailURL(pRoutingCoutext));
+                pRoutingCoutext
+                        .response()
+                        .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
+                        .setStatusCode(302)
+                        .end();
+                return;
+              }
 
-        pRoutingCoutext
-                .response()
-                .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
-                .setStatusCode(302)
-                .end();
-      }
-    });
+              session = session.regenerateId();
+
+              //Session session = pRoutingCoutext.session().regenerateId();
+              session.put(FrameworkConstants.Session.PRINCIPAL, u.getDelegate());
+              getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
+
+              pRoutingCoutext
+                      .response()
+                      .putHeader(HttpHeaders.LOCATION, getSuccessURL(pRoutingCoutext))
+                      .setStatusCode(302)
+                      .end();
+            })
+            .doOnError((err) -> {
+              getLog().error(err);
+              getLog().debug(() -> "Fail URL:" + getFailURL(pRoutingCoutext));
+
+              pRoutingCoutext
+                      .response()
+                      .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
+                      .setStatusCode(302)
+                      .end();
+            })
+            .subscribe();
   }
 
   private String baseURL(RoutingContext pRoutingContext) {
@@ -98,17 +120,14 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
     String authCode = pRoutingContext.request().params().get(getQueryParamAuthCode());
 
-    return new JsonObject()
+    JsonObject config = new JsonObject()
             .put("code", authCode)
             .put("redirect_uri", baseURL(pRoutingContext) + getCallbackURI());
-  }
 
-  public OAuth2Auth getOAuth2Auth() {
-    return mOAuth2Auth;
-  }
+    getLog().debug(() -> "Auth Config:" + config);
 
-  public void setOAuth2Auth(OAuth2Auth pOAuth2Auth) {
-    this.mOAuth2Auth = pOAuth2Auth;
+    return config;
+
   }
 
   public String getQueryParamAuthCode() {
@@ -155,6 +174,14 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
   public void setFailPath(String pFailPath) {
     this.mFailPath = pFailPath;
+  }
+
+  public AuthProvider getAuthProvider() {
+    return mAuthProvider;
+  }
+
+  public void setAuthProvider(AuthProvider pAuthProvider) {
+    this.mAuthProvider = pAuthProvider;
   }
 
 }

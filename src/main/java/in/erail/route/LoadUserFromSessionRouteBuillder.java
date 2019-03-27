@@ -1,11 +1,8 @@
 package in.erail.route;
 
 import in.erail.common.FrameworkConstants;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.oauth2.impl.OAuth2AuthProviderImpl;
-import io.vertx.ext.auth.oauth2.impl.OAuth2TokenImpl;
-import io.vertx.reactivex.ext.auth.oauth2.AccessToken;
-import io.vertx.reactivex.ext.auth.oauth2.OAuth2Auth;
+import io.vertx.reactivex.ext.auth.AuthProvider;
+import io.vertx.reactivex.ext.auth.User;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.Session;
@@ -16,16 +13,8 @@ import io.vertx.reactivex.ext.web.Session;
  */
 public class LoadUserFromSessionRouteBuillder extends AbstractRouterBuilderImpl {
 
-  private OAuth2Auth mOAuth2Auth;
-
-  public OAuth2Auth getOAuth2Auth() {
-    return mOAuth2Auth;
-  }
-
-  public void setOAuth2Auth(OAuth2Auth pOAuth2Auth) {
-    this.mOAuth2Auth = pOAuth2Auth;
-  }
-
+	private AuthProvider mAuthProvider;
+	
   @Override
   public Router getRouter(Router pRouter) {
     pRouter.route().handler(this::handle);
@@ -34,20 +23,26 @@ public class LoadUserFromSessionRouteBuillder extends AbstractRouterBuilderImpl 
 
   public void handle(RoutingContext pRoutingContext) {
     Session session = pRoutingContext.session();
-    if (session != null && getOAuth2Auth() != null) {
-      JsonObject principal = session.get(FrameworkConstants.Session.PRINCIPAL);
-      if (principal != null) {
-        OAuth2AuthProviderImpl provider = (OAuth2AuthProviderImpl) getOAuth2Auth().getDelegate();
-        try {
-          OAuth2TokenImpl token = new OAuth2TokenImpl(provider, principal);
-          pRoutingContext.setUser(new AccessToken(token));
-        } catch (RuntimeException e) {
-          getLog().error(e);
-          pRoutingContext.fail(401);
-          return;
-        }
+
+    if (session != null) {
+      io.vertx.ext.auth.User user = session.get(FrameworkConstants.Session.PRINCIPAL);
+      if (user == null) {
+        getLog().debug("User not found");
+      } else {
+        user.setAuthProvider(getAuthProvider().getDelegate());
+        pRoutingContext.setUser(new User(user));
       }
     }
+    
     pRoutingContext.next();
   }
+
+  public AuthProvider getAuthProvider() {
+    return mAuthProvider;
+  }
+
+  public void setAuthProvider(AuthProvider pAuthProvider) {
+    this.mAuthProvider = pAuthProvider;
+  }
+
 }

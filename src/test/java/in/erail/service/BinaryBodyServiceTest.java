@@ -4,56 +4,45 @@ import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import in.erail.server.Server;
 import in.erail.test.TestConstants;
-import org.junit.Test;
-import org.junit.runner.RunWith;
 
 import io.vertx.core.json.JsonObject;
-import io.vertx.ext.unit.Async;
-import io.vertx.ext.unit.TestContext;
-import io.vertx.ext.unit.junit.Timeout;
-import io.vertx.ext.unit.junit.VertxUnitRunner;
-import org.junit.Rule;
 import in.erail.glue.Glue;
+import io.vertx.junit5.VertxExtension;
+import io.vertx.junit5.VertxTestContext;
+import io.vertx.reactivex.ext.web.client.WebClient;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
  * @author vinay
  */
-@RunWith(VertxUnitRunner.class)
+@ExtendWith(VertxExtension.class)
 public class BinaryBodyServiceTest {
 
-  @Rule
-  public Timeout rule = Timeout.seconds(2000);
-
-  @SuppressWarnings("deprecation")
   @Test
-  public void testProcess(TestContext context) {
-
-    Async async = context.async();
+  public void testProcess(VertxTestContext testContext) {
 
     Server server = Glue.instance().resolve("/in/erail/server/Server");
 
     //Broadcast Request
-    String json = new JsonObject().put("data", "testdata").toString();
-    server
-            .getVertx()
-            .createHttpClient()
+    JsonObject json = new JsonObject().put("data", "testdata");
+
+    WebClient
+            .create(server.getVertx())
             .post(server.getHttpServerOptions().getPort(), server.getHttpServerOptions().getHost(), "/v1/broadcastv2/testTopic")
             .putHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString())
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
-            .putHeader(HttpHeaders.CONTENT_LENGTH, Integer.toString(json.length()))
             .putHeader(HttpHeaders.AUTHORIZATION, TestConstants.ACCESS_TOKEN)
-            .handler(response -> {
-              context.assertEquals(response.statusCode(), 200, response.statusMessage());
-              context.assertEquals(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN), "*");
-              context.assertTrue(MediaType.parse(response.getHeader(HttpHeaders.CONTENT_TYPE)).equals(MediaType.PLAIN_TEXT_UTF_8));
-              response.bodyHandler((event) -> {
-                context.assertEquals(event.toString(), "testdata");
-                async.countDown();
-              });
+            .rxSendJsonObject(json)
+            .doOnSuccess(req -> assertEquals(200, req.statusCode()))
+            .doOnSuccess(response -> {
+              assertEquals(response.getHeader(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN), "*");
+              assertTrue(MediaType.parse(response.getHeader(HttpHeaders.CONTENT_TYPE)).equals(MediaType.PLAIN_TEXT_UTF_8));
+              assertEquals(response.bodyAsString(), "testdata");
             })
-            .write(json)
-            .end();
+            .subscribe(req -> testContext.completeNow(), err -> testContext.failNow(err));
 
   }
 
