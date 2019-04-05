@@ -1,8 +1,7 @@
 package in.erail.model;
 
-import org.junit.Assert;
-
 import io.vertx.core.json.JsonObject;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  *
@@ -37,7 +36,7 @@ public class ResponseEventTest {
     response.addHeader("a", "b");
 
     JsonObject json = JsonObject.mapFrom(response);
-    Assert.assertEquals(result, json);
+    assertEquals(result, json);
   }
 
 }

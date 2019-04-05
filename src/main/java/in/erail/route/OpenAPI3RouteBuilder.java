@@ -4,6 +4,8 @@ import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.Timer;
+import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
@@ -29,6 +31,7 @@ import in.erail.service.RESTService;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.reactivex.Observable;
 import io.vertx.reactivex.core.buffer.Buffer;
+import io.vertx.reactivex.core.http.HttpServerRequest;
 import io.vertx.reactivex.ext.web.Cookie;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -251,6 +254,8 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                           if (isSecurityEnable() && service.isSecure()) {
 
                             if (routingContext.user() == null) {
+                              getLog().error(() -> "Security on this operation is enabled. But, no user found. Please check, if you are passing correct auth credentials:" + service.getOperationId());
+                              getLog().trace(() -> dumpRequest(routingContext.request()));
                               routingContext.fail(401);
                               return;
                             }
@@ -265,12 +270,13 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                                       .firstElement()
                                       .subscribe((success) -> {
                                         getLog().trace(() -> "Request is authorized. Processing Message:" + service.getOperationId());
+                                        getLog().trace(() -> dumpRequest(routingContext.request()));
                                         process(routingContext, service.getServiceUniqueId());
                                       }, (err) -> {
                                         getLog().error(() -> "Error processing serive message", err);
                                         routingContext.fail(err);
                                       }, () -> {
-                                        getLog().warn(() -> "You are not authorized to access service:" + service.getOperationId() + ":" + routingContext.toString());
+                                        getLog().warn(() -> "You are not authorized to access service:" + service.getOperationId());
                                         routingContext.fail(401);
                                       });
                             } else {
@@ -280,6 +286,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
                           } else {
                             getLog().warn("Security disabled for " + service.getServiceUniqueId());
+                            getLog().trace(() -> dumpRequest(routingContext.request()));
                             process(routingContext, service.getServiceUniqueId());
                           }
                         });
@@ -291,6 +298,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                           }
 
                           getLog().debug(() -> "API Failure Handle called:" + service.getOperationId() + ":" + generateErrorResponse(routingContext));
+                          getLog().trace(() -> dumpRequest(routingContext.request()));
 
                           routingContext
                                   .response()
@@ -304,6 +312,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                           }
 
                           getLog().debug(() -> "API Validation Failer Handle called:" + service.getOperationId() + ":" + generateErrorResponse(routingContext));
+                          getLog().trace(() -> dumpRequest(routingContext.request()));
 
                           routingContext
                                   .response()
@@ -313,6 +322,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                         apiFactory.setNotImplementedFailureHandler((routingContext) -> {
 
                           getLog().debug(() -> "API not implemented:" + service.getOperationId() + ":" + generateErrorResponse(routingContext));
+                          getLog().trace(() -> dumpRequest(routingContext.request()));
 
                           routingContext
                                   .response()
@@ -323,6 +333,15 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
             });
 
     return apiFactory.getRouter();
+  }
+
+  protected String dumpRequest(HttpServerRequest pRequest) {
+    return MoreObjects
+            .toStringHelper(pRequest)
+            .add("RequestPath", pRequest.absoluteURI())
+            .add("Headers", Joiner.on(",").join(pRequest.headers().entries().stream().map((e) -> e.getKey() + ":" + e.getValue()).collect(Collectors.toList())))
+            .add("QueryParam", pRequest.query())
+            .toString();
   }
 
   protected String generateErrorResponse(RoutingContext pContext) {

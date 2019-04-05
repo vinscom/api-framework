@@ -52,7 +52,7 @@ public class Server {
             .rxListen()
             .blockingGet();
 
-    getLog().debug(() -> String.format("---------------Server[%s:%s] is ready-----------------", getHttpServerOptions().getHost(), getHttpServerOptions().getPort()));
+    getLog().info(() -> String.format("---------------Server[%s:%s] is ready-----------------", getHttpServerOptions().getHost(), getHttpServerOptions().getPort()));
   }
 
   public Vertx getVertx() {
