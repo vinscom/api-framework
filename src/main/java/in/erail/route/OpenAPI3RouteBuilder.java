@@ -7,6 +7,7 @@ import com.codahale.metrics.Timer;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
+import com.google.common.io.Files;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
 import java.io.File;
@@ -362,7 +363,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
   public void setOpenAPI3JSON(JsonObject pOpenAPI3JSON) {
     try {
       File f = File.createTempFile("openapi3json", null);
-      getVertx().getDelegate().fileSystem().writeFileBlocking(f.getAbsolutePath(), pOpenAPI3JSON.toBuffer());
+      Files.write(pOpenAPI3JSON.toBuffer().getBytes(), f);
       setOpenAPI3File(f);
     } catch (IOException ex) {
       getLog().error(ex);
