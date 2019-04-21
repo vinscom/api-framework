@@ -26,10 +26,15 @@ public class QuartzScheduler {
   private Properties mConfig;
   private Scheduler mScheduler;
   private Logger mLog;
+  private boolean mEnable;
 
   @StartService
   public void start() throws SchedulerException {
     mScheduler = new StdSchedulerFactory(getConfig()).getScheduler();
+    if (mEnable) {
+      mScheduler.start();
+      getLog().info("Scheduler Started");
+    }
   }
 
   public String addScheduledJob(QuartzScheduledJob pScheduledJob) {
@@ -55,6 +60,7 @@ public class QuartzScheduler {
 
     try {
       mScheduler.scheduleJob(jobDetails, trigger);
+      getLog().debug(() -> "Added Job:" + jobKey.toString());
     } catch (SchedulerException ex) {
       getLog().error(ex);
     }
@@ -76,6 +82,14 @@ public class QuartzScheduler {
 
   public void setLog(Logger pLog) {
     this.mLog = pLog;
+  }
+
+  public boolean isEnable() {
+    return mEnable;
+  }
+
+  public void setEnable(boolean pEnable) {
+    this.mEnable = pEnable;
   }
 
 }

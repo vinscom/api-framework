@@ -14,31 +14,31 @@ public class QuartzConfigurationBuilder {
   private String mSchedulerInstanceId;
   private String mSchedulerInstanceIdGeneratorClass;
   private String mSchedulerThreadName;
-  private Boolean mSchedulerMakeSchedulerThreadDaemon;
-  private Boolean mSchedulerThreadsInheritContextClassLoaderOfInitializer;
-  private Long mSchedulerIdleWaitTime;
-  private Long mSchedulerDBFailureRetryInterval;
+  private String mSchedulerMakeSchedulerThreadDaemon;
+  private String mSchedulerThreadsInheritContextClassLoaderOfInitializer;
+  private String mSchedulerIdleWaitTime;
+  private String mSchedulerDBFailureRetryInterval;
   private String mSchedulerClassLoadHelperClass;
   private String mSchedulerJobFactoryClass;
-  private Boolean mSchedulerSkipUpdateCheck;
-  private Integer mSchedulerBatchTriggerAcquisitionMaxCount;
-  private Long mSchedulerBatchTriggerAcquisitionFireAheadTimeWindow;
+  private String mSchedulerSkipUpdateCheck;
+  private String mSchedulerBatchTriggerAcquisitionMaxCount;
+  private String mSchedulerBatchTriggerAcquisitionFireAheadTimeWindow;
   private String mThreadPoolClass;
-  private Integer mThreadPoolThreadCount;
-  private Integer mThreadPoolThreadPriority;
+  private String mThreadPoolThreadCount;
+  private String mThreadPoolThreadPriority;
   private String mJobStoreClass;
   private String mJobStoreDriverDelegateClass;
   private String mJobStoreDataSource;
   private String mJobStoreTablePrefix;
-  private Boolean mJobStoreUseProperties;
-  private Integer mJobStoreMisfireThreshold;
-  private Boolean mJobStoreIsClustered;
-  private Long mJobStoreClusterCheckinInterval;
-  private Integer mJobStoreMaxMisfiresToHandleAtATime;
-  private Boolean mJobStoreDontSetAutoCommitFalse;
+  private String mJobStoreUseProperties;
+  private String mJobStoreMisfireThreshold;
+  private String mJobStoreIsClustered;
+  private String mJobStoreClusterCheckinInterval;
+  private String mJobStoreMaxMisfiresToHandleAtATime;
+  private String mJobStoreDontSetAutoCommitFalse;
   private String mJobStoreSelectWithLockSQL;
-  private Boolean mJobStoreTxIsolationLevelSerializable;
-  private Boolean mJobStoreAcquireTriggersWithinLock;
+  private String mJobStoreTxIsolationLevelSerializable;
+  private String mJobStoreAcquireTriggersWithinLock;
   private String mJobStoreLockHandlerClass;
   private String mJobStoreDriverDelegateInitString;
   private EntityManagerFactory mEntityManagerFactory;
@@ -49,6 +49,8 @@ public class QuartzConfigurationBuilder {
 
     if (null != mSchedulerInstanceName) {
       config.put("org.quartz.scheduler.instanceName", mSchedulerInstanceName);
+    } else {
+      config.put("org.quartz.scheduler.instanceName", "DefaultQuartzScheduler");
     }
     if (null != mSchedulerInstanceId) {
       config.put("org.quartz.scheduler.instanceId", mSchedulerInstanceId);
@@ -90,13 +92,22 @@ public class QuartzConfigurationBuilder {
     }
     if (null != mThreadPoolClass) {
       config.put("org.quartz.threadPool.class", mThreadPoolClass);
+    } else {
+      config.put("org.quartz.threadPool.class", "org.quartz.simpl.SimpleThreadPool");
     }
+
     if (null != mThreadPoolThreadCount) {
       config.put("org.quartz.threadPool.threadCount", mThreadPoolThreadCount);
+    } else {
+      config.put("org.quartz.threadPool.threadCount", "1");
     }
+
     if (null != mThreadPoolThreadPriority) {
       config.put("org.quartz.threadPool.threadPriority", mThreadPoolThreadPriority);
+    } else {
+      config.put("org.quartz.threadPool.threadPriority", "5");
     }
+
     if (null != mJobStoreDriverDelegateClass) {
       config.put("org.quartz.jobStore.driverDelegateClass", mJobStoreDriverDelegateClass);
     }
@@ -108,6 +119,8 @@ public class QuartzConfigurationBuilder {
     }
     if (null != mJobStoreMisfireThreshold) {
       config.put("org.quartz.jobStore.misfireThreshold", mJobStoreMisfireThreshold);
+    } else {
+      config.put("org.quartz.jobStore.misfireThreshold", "60000");
     }
     if (null != mJobStoreIsClustered) {
       config.put("org.quartz.jobStore.isClustered", mJobStoreIsClustered);
@@ -138,7 +151,7 @@ public class QuartzConfigurationBuilder {
     }
 
     if (null != mEntityManagerFactory) {
-      Map<String,Object> em = mEntityManagerFactory.getProperties();
+      Map<String, Object> em = mEntityManagerFactory.getProperties();
 
       String datasourceName = "org.quartz.dataSource.";
       if (mJobStoreDataSource == null) {
@@ -162,6 +175,8 @@ public class QuartzConfigurationBuilder {
 
     if (null != mJobStoreClass) {
       config.put("org.quartz.jobStore.class", mJobStoreClass);
+    } else {
+      config.put("org.quartz.jobStore.class", "org.quartz.simpl.RAMJobStore");
     }
 
     return config;
@@ -199,35 +214,35 @@ public class QuartzConfigurationBuilder {
     this.mSchedulerThreadName = pSchedulerThreadName;
   }
 
-  public Boolean getSchedulerMakeSchedulerThreadDaemon() {
+  public String getSchedulerMakeSchedulerThreadDaemon() {
     return mSchedulerMakeSchedulerThreadDaemon;
   }
 
-  public void setSchedulerMakeSchedulerThreadDaemon(Boolean pSchedulerMakeSchedulerThreadDaemon) {
+  public void setSchedulerMakeSchedulerThreadDaemon(String pSchedulerMakeSchedulerThreadDaemon) {
     this.mSchedulerMakeSchedulerThreadDaemon = pSchedulerMakeSchedulerThreadDaemon;
   }
 
-  public Boolean getSchedulerThreadsInheritContextClassLoaderOfInitializer() {
+  public String getSchedulerThreadsInheritContextClassLoaderOfInitializer() {
     return mSchedulerThreadsInheritContextClassLoaderOfInitializer;
   }
 
-  public void setSchedulerThreadsInheritContextClassLoaderOfInitializer(Boolean pSchedulerThreadsInheritContextClassLoaderOfInitializer) {
+  public void setSchedulerThreadsInheritContextClassLoaderOfInitializer(String pSchedulerThreadsInheritContextClassLoaderOfInitializer) {
     this.mSchedulerThreadsInheritContextClassLoaderOfInitializer = pSchedulerThreadsInheritContextClassLoaderOfInitializer;
   }
 
-  public Long getSchedulerIdleWaitTime() {
+  public String getSchedulerIdleWaitTime() {
     return mSchedulerIdleWaitTime;
   }
 
-  public void setSchedulerIdleWaitTime(Long pSchedulerIdleWaitTime) {
+  public void setSchedulerIdleWaitTime(String pSchedulerIdleWaitTime) {
     this.mSchedulerIdleWaitTime = pSchedulerIdleWaitTime;
   }
 
-  public Long getSchedulerDBFailureRetryInterval() {
+  public String getSchedulerDBFailureRetryInterval() {
     return mSchedulerDBFailureRetryInterval;
   }
 
-  public void setSchedulerDBFailureRetryInterval(Long pSchedulerDBFailureRetryInterval) {
+  public void setSchedulerDBFailureRetryInterval(String pSchedulerDBFailureRetryInterval) {
     this.mSchedulerDBFailureRetryInterval = pSchedulerDBFailureRetryInterval;
   }
 
@@ -247,27 +262,27 @@ public class QuartzConfigurationBuilder {
     this.mSchedulerJobFactoryClass = pSchedulerJobFactoryClass;
   }
 
-  public Boolean getSchedulerSkipUpdateCheck() {
+  public String getSchedulerSkipUpdateCheck() {
     return mSchedulerSkipUpdateCheck;
   }
 
-  public void setSchedulerSkipUpdateCheck(Boolean pSchedulerSkipUpdateCheck) {
+  public void setSchedulerSkipUpdateCheck(String pSchedulerSkipUpdateCheck) {
     this.mSchedulerSkipUpdateCheck = pSchedulerSkipUpdateCheck;
   }
 
-  public Integer getSchedulerBatchTriggerAcquisitionMaxCount() {
+  public String getSchedulerBatchTriggerAcquisitionMaxCount() {
     return mSchedulerBatchTriggerAcquisitionMaxCount;
   }
 
-  public void setSchedulerBatchTriggerAcquisitionMaxCount(Integer pSchedulerBatchTriggerAcquisitionMaxCount) {
+  public void setSchedulerBatchTriggerAcquisitionMaxCount(String pSchedulerBatchTriggerAcquisitionMaxCount) {
     this.mSchedulerBatchTriggerAcquisitionMaxCount = pSchedulerBatchTriggerAcquisitionMaxCount;
   }
 
-  public Long getSchedulerBatchTriggerAcquisitionFireAheadTimeWindow() {
+  public String getSchedulerBatchTriggerAcquisitionFireAheadTimeWindow() {
     return mSchedulerBatchTriggerAcquisitionFireAheadTimeWindow;
   }
 
-  public void setSchedulerBatchTriggerAcquisitionFireAheadTimeWindow(Long pSchedulerBatchTriggerAcquisitionFireAheadTimeWindow) {
+  public void setSchedulerBatchTriggerAcquisitionFireAheadTimeWindow(String pSchedulerBatchTriggerAcquisitionFireAheadTimeWindow) {
     this.mSchedulerBatchTriggerAcquisitionFireAheadTimeWindow = pSchedulerBatchTriggerAcquisitionFireAheadTimeWindow;
   }
 
@@ -279,19 +294,19 @@ public class QuartzConfigurationBuilder {
     this.mThreadPoolClass = pThreadPoolClass;
   }
 
-  public Integer getThreadPoolThreadCount() {
+  public String getThreadPoolThreadCount() {
     return mThreadPoolThreadCount;
   }
 
-  public void setThreadPoolThreadCount(Integer pThreadPoolThreadCount) {
+  public void setThreadPoolThreadCount(String pThreadPoolThreadCount) {
     this.mThreadPoolThreadCount = pThreadPoolThreadCount;
   }
 
-  public Integer getThreadPoolThreadPriority() {
+  public String getThreadPoolThreadPriority() {
     return mThreadPoolThreadPriority;
   }
 
-  public void setThreadPoolThreadPriority(Integer pThreadPoolThreadPriority) {
+  public void setThreadPoolThreadPriority(String pThreadPoolThreadPriority) {
     this.mThreadPoolThreadPriority = pThreadPoolThreadPriority;
   }
 
@@ -327,51 +342,51 @@ public class QuartzConfigurationBuilder {
     this.mJobStoreTablePrefix = pJobStoreTablePrefix;
   }
 
-  public Boolean getJobStoreUseProperties() {
+  public String getJobStoreUseProperties() {
     return mJobStoreUseProperties;
   }
 
-  public void setJobStoreUseProperties(Boolean pJobStoreUseProperties) {
+  public void setJobStoreUseProperties(String pJobStoreUseProperties) {
     this.mJobStoreUseProperties = pJobStoreUseProperties;
   }
 
-  public Integer getJobStoreMisfireThreshold() {
+  public String getJobStoreMisfireThreshold() {
     return mJobStoreMisfireThreshold;
   }
 
-  public void setJobStoreMisfireThreshold(Integer pJobStoreMisfireThreshold) {
+  public void setJobStoreMisfireThreshold(String pJobStoreMisfireThreshold) {
     this.mJobStoreMisfireThreshold = pJobStoreMisfireThreshold;
   }
 
-  public Boolean getJobStoreIsClustered() {
+  public String getJobStoreIsClustered() {
     return mJobStoreIsClustered;
   }
 
-  public void setJobStoreIsClustered(Boolean pJobStoreIsClustered) {
+  public void setJobStoreIsClustered(String pJobStoreIsClustered) {
     this.mJobStoreIsClustered = pJobStoreIsClustered;
   }
 
-  public Long getJobStoreClusterCheckinInterval() {
+  public String getJobStoreClusterCheckinInterval() {
     return mJobStoreClusterCheckinInterval;
   }
 
-  public void setJobStoreClusterCheckinInterval(Long pJobStoreClusterCheckinInterval) {
+  public void setJobStoreClusterCheckinInterval(String pJobStoreClusterCheckinInterval) {
     this.mJobStoreClusterCheckinInterval = pJobStoreClusterCheckinInterval;
   }
 
-  public Integer getJobStoreMaxMisfiresToHandleAtATime() {
+  public String getJobStoreMaxMisfiresToHandleAtATime() {
     return mJobStoreMaxMisfiresToHandleAtATime;
   }
 
-  public void setJobStoreMaxMisfiresToHandleAtATime(Integer pJobStoreMaxMisfiresToHandleAtATime) {
+  public void setJobStoreMaxMisfiresToHandleAtATime(String pJobStoreMaxMisfiresToHandleAtATime) {
     this.mJobStoreMaxMisfiresToHandleAtATime = pJobStoreMaxMisfiresToHandleAtATime;
   }
 
-  public Boolean getJobStoreDontSetAutoCommitFalse() {
+  public String getJobStoreDontSetAutoCommitFalse() {
     return mJobStoreDontSetAutoCommitFalse;
   }
 
-  public void setJobStoreDontSetAutoCommitFalse(Boolean pJobStoreDontSetAutoCommitFalse) {
+  public void setJobStoreDontSetAutoCommitFalse(String pJobStoreDontSetAutoCommitFalse) {
     this.mJobStoreDontSetAutoCommitFalse = pJobStoreDontSetAutoCommitFalse;
   }
 
@@ -383,19 +398,19 @@ public class QuartzConfigurationBuilder {
     this.mJobStoreSelectWithLockSQL = pJobStoreSelectWithLockSQL;
   }
 
-  public Boolean getJobStoreTxIsolationLevelSerializable() {
+  public String getJobStoreTxIsolationLevelSerializable() {
     return mJobStoreTxIsolationLevelSerializable;
   }
 
-  public void setJobStoreTxIsolationLevelSerializable(Boolean pJobStoreTxIsolationLevelSerializable) {
+  public void setJobStoreTxIsolationLevelSerializable(String pJobStoreTxIsolationLevelSerializable) {
     this.mJobStoreTxIsolationLevelSerializable = pJobStoreTxIsolationLevelSerializable;
   }
 
-  public Boolean getJobStoreAcquireTriggersWithinLock() {
+  public String getJobStoreAcquireTriggersWithinLock() {
     return mJobStoreAcquireTriggersWithinLock;
   }
 
-  public void setJobStoreAcquireTriggersWithinLock(Boolean pJobStoreAcquireTriggersWithinLock) {
+  public void setJobStoreAcquireTriggersWithinLock(String pJobStoreAcquireTriggersWithinLock) {
     this.mJobStoreAcquireTriggersWithinLock = pJobStoreAcquireTriggersWithinLock;
   }
 
