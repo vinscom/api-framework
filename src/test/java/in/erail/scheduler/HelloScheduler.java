@@ -23,7 +23,7 @@ public class HelloScheduler extends QuartzJob {
   
   @StartService
   public void start() throws SchedulerException {
-    ScheduleBuilder sb = CronScheduleBuilder.cronSchedule(getCronExp());
+    ScheduleBuilder<?> sb = CronScheduleBuilder.cronSchedule(getCronExp());
     QuartzScheduledJob sj = new QuartzScheduledJob("Test", "Nothing", this, sb);
     getScheduler().addScheduledJob(sj);
   }

@@ -16,7 +16,6 @@ import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 
 import in.erail.glue.annotation.StartService;
-import io.reactivex.Single;
 
 /**
  *
