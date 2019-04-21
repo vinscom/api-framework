@@ -8,14 +8,14 @@ import org.quartz.Job;
  */
 public abstract class QuartzJob implements Job {
 
-  private String mComponentPath;
+  private String mMountPath;
 
-  public String getComponentPath() {
-    return mComponentPath;
+  public String getMountPath() {
+    return mMountPath;
   }
 
-  public void setComponentPath(String pComponentPath) {
-    this.mComponentPath = pComponentPath;
+  public void setMountPath(String pMountPath) {
+    this.mMountPath = pMountPath;
   }
 
 }
