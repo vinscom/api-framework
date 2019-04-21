@@ -34,7 +34,6 @@ public class BinaryBodyServiceTest {
             .post(server.getHttpServerOptions().getPort(), server.getHttpServerOptions().getHost(), "/v1/broadcastv2/testTopic")
             .putHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString())
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
-            .putHeader(HttpHeaders.AUTHORIZATION, TestConstants.ACCESS_TOKEN)
             .rxSendJsonObject(json)
             .doOnSuccess(req -> assertEquals(200, req.statusCode()))
             .doOnSuccess(response -> {

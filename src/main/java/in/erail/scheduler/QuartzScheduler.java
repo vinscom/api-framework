@@ -16,6 +16,7 @@ import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 
 import in.erail.glue.annotation.StartService;
+import io.reactivex.Single;
 
 /**
  *
@@ -90,6 +91,10 @@ public class QuartzScheduler {
 
   public void setEnable(boolean pEnable) {
     this.mEnable = pEnable;
+  }
+
+  public Scheduler getScheduler() {
+    return mScheduler;
   }
 
 }

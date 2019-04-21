@@ -99,7 +99,7 @@ public class QuartzConfigurationBuilder {
     if (null != mThreadPoolThreadCount) {
       config.put("org.quartz.threadPool.threadCount", mThreadPoolThreadCount);
     } else {
-      config.put("org.quartz.threadPool.threadCount", "1");
+      config.put("org.quartz.threadPool.threadCount", "10");
     }
 
     if (null != mThreadPoolThreadPriority) {
