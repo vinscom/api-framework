@@ -48,14 +48,14 @@ public class QuartzScheduler {
             .newJob(job.getClass())
             .withDescription(pScheduledJob.getJobDescription())
             .withIdentity(jobKey)
-            .usingJobData(QuartzJobFactory.COMPONENT_PATH, job.getMountPath())
+            .usingJobData(QuartzJobFactory.COMPONENT_PATH, job.getGlueMountPath())
             .build();
 
     Trigger trigger = newTrigger()
             .withIdentity(tirggerKey)
             .startNow()
             .withSchedule(pScheduledJob.getScheduleBuilder())
-            .usingJobData(QuartzJobFactory.COMPONENT_PATH, job.getMountPath())
+            .usingJobData(QuartzJobFactory.COMPONENT_PATH, job.getGlueMountPath())
             .build();
 
     try {

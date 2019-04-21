@@ -8,14 +8,14 @@ import org.quartz.Job;
  */
 public abstract class QuartzJob implements Job {
 
-  private String mMountPath;
+  private String mGlueMountPath;
 
-  public String getMountPath() {
-    return mMountPath;
+  public String getGlueMountPath() {
+    return mGlueMountPath;
   }
 
-  public void setMountPath(String pMountPath) {
-    this.mMountPath = pMountPath;
+  public void setGlueMountPath(String pGlueMountPath) {
+    this.mGlueMountPath = pGlueMountPath;
   }
 
 }
