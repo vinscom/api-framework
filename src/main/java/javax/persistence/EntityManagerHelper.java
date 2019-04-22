@@ -1,9 +1,6 @@
-package in.erail.persistence;
+package javax.persistence;
 
 import io.reactivex.Single;
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
 import org.apache.logging.log4j.Logger;
 
 /**
