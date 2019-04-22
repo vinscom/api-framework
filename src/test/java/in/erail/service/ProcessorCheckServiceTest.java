@@ -6,6 +6,7 @@ import in.erail.server.Server;
 
 import io.vertx.core.json.JsonObject;
 import in.erail.glue.Glue;
+import in.erail.test.TestConstants;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.reactivex.ext.web.client.WebClient;
@@ -32,6 +33,7 @@ public class ProcessorCheckServiceTest {
             .get(server.getHttpServerOptions().getPort(), server.getHttpServerOptions().getHost(), "/v1/processcheck")
             .putHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString())
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
+            .putHeader(HttpHeaders.AUTHORIZATION, TestConstants.ACCESS_TOKEN)
             .rxSendJsonObject(json)
             .doOnSuccess(req -> assertEquals(200, req.statusCode()))
             .doOnSuccess(response -> {

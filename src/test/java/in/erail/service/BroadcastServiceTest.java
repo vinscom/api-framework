@@ -44,6 +44,7 @@ public class BroadcastServiceTest {
             .post(server.getHttpServerOptions().getPort(), server.getHttpServerOptions().getHost(), "/v1/broadcast/testTopic")
             .putHeader(HttpHeaders.CONTENT_TYPE, MediaType.JSON_UTF_8.toString())
             .putHeader(HttpHeaders.ORIGIN, "https://test.com")
+            .putHeader(HttpHeaders.AUTHORIZATION, TestConstants.ACCESS_TOKEN)
             .rxSendJsonObject(json)
             .doOnSuccess(req -> assertEquals(200, req.statusCode()))
             .doOnSuccess(req -> {
