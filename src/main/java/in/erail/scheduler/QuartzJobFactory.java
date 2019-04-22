@@ -46,7 +46,7 @@ public class QuartzJobFactory implements JobFactory {
       job = Glue.instance().resolve(compPath.get());
     }else {
       job = (Job) Util.createInstance(bundle.getJobDetail().getJobClass());
-      getLog().warn(() -> "Create instead of Job from Class. Are you sure, you don't want to use Component:" + bundle.getJobDetail().getJobClass().getCanonicalName());
+      getLog().warn(() -> "Create job instance from class, Instead of Component. Are you sure, you don't want to use Component:" + bundle.getJobDetail().getJobClass().getCanonicalName());
     }
 
     JobDataMap jobDataMap = new JobDataMap();
