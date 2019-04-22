@@ -29,3 +29,6 @@ nbactions.xml
 .idea
 .vertx
 api-framwork.iml
+.DS_Store
+.factorypath
+nb-configuration.xml

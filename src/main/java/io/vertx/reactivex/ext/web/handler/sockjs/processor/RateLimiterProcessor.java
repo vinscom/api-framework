@@ -61,7 +61,7 @@ public class RateLimiterProcessor implements BridgeEventProcessor {
               BridgeEventType eventType = ctx.getBridgeEvent().type();
 
               Bucket bucket = getCache().get(eventType).get(ctx.getBridgeEvent().socket().writeHandlerID(), () -> {
-                Refill refill = Refill.smooth(getRateOfTokenFill().getOrDefault(eventType, getDefaultRateOfTokenFill()),
+                Refill refill = Refill.greedy(getRateOfTokenFill().getOrDefault(eventType, getDefaultRateOfTokenFill()),
                         Duration.ofSeconds(getRateOfTokenFillDuration().getOrDefault(eventType, getDefaultRateOfTokenFillDuration())));
                 Bandwidth limit = Bandwidth.classic(getTokenBucketSize().getOrDefault(eventType, getDefaultTokenBucketSize()), refill);
                 return Bucket4j.builder().addLimit(limit).build();
