@@ -19,16 +19,18 @@ public class EntityManagerFactoryBuilder {
       return mEntityManagerFactory;
     }
 
+    String pun = pPersistenceUnitName.toLowerCase().replace("_", ".");
+
     Map override = new HashMap();
-    String url = Util.getEnvironmentValue(pPersistenceUnitName.toUpperCase() + "_URL");
+    String url = Util.getEnvironmentValue(pun + ".url");
     if (!Strings.isNullOrEmpty(url)) {
       override.put("javax.persistence.jdbc.url", url);
     }
-    String user = Util.getEnvironmentValue(pPersistenceUnitName.toUpperCase() + "_USER");
+    String user = Util.getEnvironmentValue(pun + ".user");
     if (!Strings.isNullOrEmpty(user)) {
       override.put("javax.persistence.jdbc.user", user);
     }
-    String password = Util.getEnvironmentValue(pPersistenceUnitName.toUpperCase() + "_PASSWORD");
+    String password = Util.getEnvironmentValue(pun + ".password");
     if (!Strings.isNullOrEmpty(password)) {
       override.put("javax.persistence.jdbc.password", password);
     }
