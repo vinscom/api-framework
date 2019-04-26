@@ -21,7 +21,7 @@ public class EntityManagerFactoryBuilder {
 
     String pun = pPersistenceUnitName.toLowerCase().replace("_", ".");
 
-    Map override = new HashMap();
+    Map<String,String> override = new HashMap<String, String>();
     String url = Util.getEnvironmentValue(pun + ".url");
     if (!Strings.isNullOrEmpty(url)) {
       override.put("javax.persistence.jdbc.url", url);
