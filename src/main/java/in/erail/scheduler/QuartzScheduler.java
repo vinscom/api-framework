@@ -16,6 +16,8 @@ import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
 
 import in.erail.glue.annotation.StartService;
+import io.vertx.core.json.JsonObject;
+import java.util.Optional;
 
 /**
  *
@@ -37,10 +39,15 @@ public class QuartzScheduler {
     }
   }
 
-  public String addScheduledJob(QuartzScheduledJob pScheduledJob) {
+  public JobKey addScheduledJob(QuartzScheduledJob pScheduledJob) {
     String uuid = UUID.randomUUID().toString();
-    JobKey jobKey = new JobKey(uuid, pScheduledJob.getJobName());
-    TriggerKey tirggerKey = new TriggerKey(uuid, pScheduledJob.getJobName());
+    JobKey jobKey = JobKey.jobKey(uuid, pScheduledJob.getJobName());
+    TriggerKey tirggerKey = TriggerKey.triggerKey(uuid, pScheduledJob.getJobName());
+
+    String auxData = Optional
+            .ofNullable(pScheduledJob.getAuxData())
+            .orElse(new JsonObject())
+            .toString();
 
     QuartzJob job = pScheduledJob.getJob();
 
@@ -49,13 +56,13 @@ public class QuartzScheduler {
             .withDescription(pScheduledJob.getJobDescription())
             .withIdentity(jobKey)
             .usingJobData(QuartzJobFactory.COMPONENT_PATH, job.getGlueMountPath())
+            .usingJobData(QuartzJob.JOB_DATA_AUX, auxData)
             .build();
 
     Trigger trigger = newTrigger()
             .withIdentity(tirggerKey)
             .startNow()
             .withSchedule(pScheduledJob.getScheduleBuilder())
-            .usingJobData(QuartzJobFactory.COMPONENT_PATH, job.getGlueMountPath())
             .build();
 
     try {
@@ -65,7 +72,7 @@ public class QuartzScheduler {
       getLog().error(ex);
     }
 
-    return jobKey.toString();
+    return jobKey;
   }
 
   public Properties getConfig() {

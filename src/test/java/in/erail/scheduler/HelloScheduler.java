@@ -2,6 +2,7 @@ package in.erail.scheduler;
 
 import in.erail.glue.annotation.StartService;
 import io.vertx.junit5.VertxTestContext;
+import java.util.Optional;
 import org.apache.logging.log4j.Logger;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobExecutionContext;
@@ -20,7 +21,7 @@ public class HelloScheduler extends QuartzJob {
   private Logger mLog;
   private VertxTestContext mVertxTestContext;
   private String mCronExp;
-  
+
   @StartService
   public void start() throws SchedulerException {
     ScheduleBuilder<?> sb = CronScheduleBuilder.cronSchedule(getCronExp());
@@ -31,7 +32,12 @@ public class HelloScheduler extends QuartzJob {
   @Override
   public void execute(JobExecutionContext pArg0) throws JobExecutionException {
     if (mVertxTestContext != null) {
-      mVertxTestContext.completeNow();
+      Optional data = Optional.ofNullable(pArg0.getJobDetail().getJobDataMap().get(QuartzJob.JOB_DATA_AUX));
+      if (data.isPresent()) {
+        mVertxTestContext.completeNow();
+      } else {
+        mVertxTestContext.failNow(new RuntimeException("Aux data not found"));
+      }
     }
   }
 

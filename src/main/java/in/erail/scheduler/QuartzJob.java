@@ -8,6 +8,8 @@ import org.quartz.Job;
  */
 public abstract class QuartzJob implements Job {
 
+  public static final String JOB_DATA_AUX = "_aux";
+
   private String mGlueMountPath;
 
   public String getGlueMountPath() {

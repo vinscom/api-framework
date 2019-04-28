@@ -1,5 +1,7 @@
 package in.erail.scheduler;
 
+import io.vertx.core.json.JsonObject;
+import java.util.Optional;
 import org.quartz.ScheduleBuilder;
 import org.quartz.Trigger;
 
@@ -13,12 +15,18 @@ public class QuartzScheduledJob {
   private String mJobDescription;
   private QuartzJob mJob;
   private ScheduleBuilder<? extends Trigger> mScheduleBuilder;
+  private JsonObject mAuxData;
 
   public QuartzScheduledJob(String pJobName, String pJobDescription, QuartzJob pJob, ScheduleBuilder<? extends Trigger> pScheduleBuilder) {
+    this(pJobName, pJobDescription, pJob, pScheduleBuilder, null);
+  }
+
+  public QuartzScheduledJob(String pJobName, String pJobDescription, QuartzJob pJob, ScheduleBuilder<? extends Trigger> pScheduleBuilder, JsonObject pAuxData) {
     this.mJobName = pJobName;
     this.mJobDescription = pJobDescription;
     this.mJob = pJob;
     this.mScheduleBuilder = pScheduleBuilder;
+    this.mAuxData = pAuxData;
   }
 
   public String getJobName() {
@@ -51,6 +59,14 @@ public class QuartzScheduledJob {
 
   public void setScheduleBuilder(ScheduleBuilder<? extends Trigger> pScheduleBuilder) {
     this.mScheduleBuilder = pScheduleBuilder;
+  }
+
+  public JsonObject getAuxData() {
+    return mAuxData;
+  }
+
+  public void setAuxData(JsonObject pAuxData) {
+    this.mAuxData = pAuxData;
   }
 
 }
