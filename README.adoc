@@ -2,6 +2,18 @@
 Vinay Kumar
 v0.1
 
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=bugs[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=code_smells[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=coverage[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=duplicated_lines_density[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=ncloc[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=sqale_rating[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=alert_status[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=reliability_rating[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=security_rating[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=sqale_index[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=vulnerabilities[Status]
+
 API Framework is structured code/pattern/project template for you to write API based
 system using Vertx Framework (http://vertx.io/).
 
