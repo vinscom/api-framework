@@ -2,8 +2,7 @@
 Vinay Kumar
 v0.1
 
-image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=bugs[Status]
-image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=code_smells[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=bugs[Status]image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=code_smells[Status]
 image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=coverage[Status]
 image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=duplicated_lines_density[Status]
 image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=ncloc[Status]
