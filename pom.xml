@@ -106,6 +106,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <argLine></argLine>
     </properties>
     <dependencies>
         <dependency>
@@ -237,7 +238,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.22.1</version>
                 <configuration>
-                    <argLine>-Dhazelcast.jmx=true -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory -Dglue.layers=${project.basedir}/config-layers/common,${project.basedir}/config-layers/test</argLine>
+                    <argLine>@{argLine} -Dhazelcast.jmx=true -Dvertx.logger-delegate-factory-class-name=io.vertx.core.logging.Log4j2LogDelegateFactory -Dglue.layers=${project.basedir}/config-layers/common,${project.basedir}/config-layers/test</argLine>
                 </configuration>
             </plugin>
             <plugin>
