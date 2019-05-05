@@ -16,7 +16,7 @@ image::./docs/images/aws-lambda-request-handling.png[AWS Lambda Architecture]
 - Project is built using https://vinscom.github.io/glue/[Glue] project
 - Getting Started with https://vinscom.github.io/api-framework-start/[API Framework]
 
-image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=bugs[Status]
+image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=bugs[Status][float="left"]
 image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=code_smells[Status]
 image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=coverage[Status]
 image::https://sonarcloud.io/api/project_badges/measure?project=vinscom_api-framework&metric=duplicated_lines_density[Status]
