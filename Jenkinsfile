@@ -12,7 +12,7 @@ pipeline {
     }
     stage("Quality Gate") {
       steps {
-         junit 'target/surefire-reports/TEST-*.xml'
+         junit '**/target/surefire-reports/TEST-*.xml'
       }
     }
   }
