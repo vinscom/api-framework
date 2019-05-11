@@ -82,7 +82,8 @@ public class SecurityTools {
     } catch (ExecutionException ex) {
       getLog().error("Global Unique not working", ex);
     } catch (InterruptedException ex) {
-      throw new RuntimeException(ex);
+      getLog().error(ex);
+      Thread.currentThread().interrupt();
     }
     return "ERROR_GLOBAL_KEY";
   }
@@ -115,7 +116,8 @@ public class SecurityTools {
             | ExecutionException ex) {
       getLog().error(ex);
     } catch (InterruptedException ex) {
-      throw new RuntimeException(ex);
+      getLog().error(ex);
+      Thread.currentThread().interrupt();
     }
 
     return null;
@@ -143,7 +145,8 @@ public class SecurityTools {
             | ExecutionException ex) {
       getLog().error(ex);
     } catch (InterruptedException ex) {
-      throw new RuntimeException(ex);
+      getLog().error(ex);
+      Thread.currentThread().interrupt();
     }
 
     return null;
