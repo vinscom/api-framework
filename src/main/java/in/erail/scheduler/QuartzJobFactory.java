@@ -28,7 +28,7 @@ import org.quartz.spi.TriggerFiredBundle;
 public class QuartzJobFactory implements JobFactory {
 
   public static final String COMPONENT_PATH = "_comp";
-  
+
   private boolean warnIfNotFound = false;
   private boolean throwIfNotFound = false;
   private Logger mLog = LogManager.getLogger(QuartzJobFactory.class);
@@ -39,12 +39,12 @@ public class QuartzJobFactory implements JobFactory {
     Optional<String> compPath = Optional
             .ofNullable(data.getString(COMPONENT_PATH))
             .filter(t -> !Strings.isNullOrEmpty(t));
-    
+
     Job job;
-    
-    if(compPath.isPresent()){
+
+    if (compPath.isPresent()) {
       job = Glue.instance().resolve(compPath.get());
-    }else {
+    } else {
       job = (Job) Util.createInstance(bundle.getJobDetail().getJobClass());
       getLog().warn(() -> "Create job instance from class, Instead of Component. Are you sure, you don't want to use Component:" + bundle.getJobDetail().getJobClass().getCanonicalName());
     }
@@ -94,6 +94,10 @@ public class QuartzJobFactory implements JobFactory {
 
         paramType = setMeth.getParameterTypes()[0];
         o = entry.getValue();
+
+        if (o == null) {
+          continue;
+        }
 
         Object parm = null;
         if (paramType.isPrimitive()) {

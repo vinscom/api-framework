@@ -79,8 +79,10 @@ public class SecurityTools {
   public String getGlobalUniqueString() {
     try {
       return mGlobalUniqueString.get();
-    } catch (InterruptedException | ExecutionException ex) {
+    } catch (ExecutionException ex) {
       getLog().error("Global Unique not working", ex);
+    } catch (InterruptedException ex) {
+      throw new RuntimeException(ex);
     }
     return "ERROR_GLOBAL_KEY";
   }
@@ -110,9 +112,10 @@ public class SecurityTools {
             | NoSuchPaddingException
             | IllegalBlockSizeException
             | BadPaddingException
-            | InterruptedException
             | ExecutionException ex) {
       getLog().error(ex);
+    } catch (InterruptedException ex) {
+      throw new RuntimeException(ex);
     }
 
     return null;
@@ -137,9 +140,10 @@ public class SecurityTools {
             | InvalidAlgorithmParameterException
             | IllegalBlockSizeException
             | BadPaddingException
-            | InterruptedException
             | ExecutionException ex) {
       getLog().error(ex);
+    } catch (InterruptedException ex) {
+      throw new RuntimeException(ex);
     }
 
     return null;
