@@ -182,13 +182,13 @@ public class QuartzJobFactory implements JobFactory {
                 "The setter on Job class " + obj.getClass().getName()
                 + " for property '" + name
                 + "' expects a " + paramType
-                + " but was given " + o.getClass().getName(), nfe);
+                + " but was given " + Optional.ofNullable(o).map(p -> p.getClass().getName()).orElse("null"), nfe);
       } catch (IllegalArgumentException e) {
         handleError(
                 "The setter on Job class " + obj.getClass().getName()
                 + " for property '" + name
                 + "' expects a " + paramType
-                + " but was given " + o.getClass().getName(), e);
+                + " but was given " + Optional.ofNullable(o).map(p -> p.getClass().getName()).orElse("null"), e);
       } catch (IllegalAccessException e) {
         handleError(
                 "The setter on Job class " + obj.getClass().getName()
