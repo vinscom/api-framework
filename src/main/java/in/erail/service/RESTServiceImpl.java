@@ -17,6 +17,7 @@ import io.reactivex.Scheduler;
 import io.reactivex.Single;
 import io.vertx.reactivex.core.eventbus.Message;
 import java.util.Arrays;
+import java.util.Optional;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
@@ -69,10 +70,22 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<E
             .map(resp -> JsonObject.mapFrom(resp.getResponse()))
             .doOnSuccess(resp -> pMessage.reply(resp))
             .doOnError(err -> {
-              ResponseEvent resp = getResponseEventClass().newInstance()
-                      .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
-                      .setMediaType(MediaType.PLAIN_TEXT_UTF_8)
-                      .setBody(ExceptionUtils.getMessage(err).getBytes());
+              ResponseEvent resp = getResponseEventClass().newInstance();
+
+              if (CustomException.class.isAssignableFrom(err.getClass())) {
+                CustomException cerr = (CustomException) err;
+                String msg = Optional.ofNullable(err.getMessage()).orElse("");
+                resp
+                        .setBody(msg.getBytes())
+                        .setMediaType(cerr.getMediaType())
+                        .setStatusCode(cerr.getStatusCode());
+              } else {
+                resp
+                        .setBody(ExceptionUtils.getMessage(err).getBytes())
+                        .setMediaType(MediaType.PLAIN_TEXT_UTF_8)
+                        .setStatusCode(HttpResponseStatus.BAD_REQUEST.code());
+              }
+
               pMessage.reply(JsonObject.mapFrom(resp));
             })
             .doOnError(oerr -> getLog().error(() -> String.format("Process exception:[%s],Error:[%s]", getServiceUniqueId(), ExceptionUtils.getStackTrace(oerr))))
@@ -103,6 +116,7 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<E
   public final MaybeSource<Event> apply(Maybe<Event> pRequest) {
     return process(pRequest);
   }
+
   public abstract MaybeSource<Event> process(Maybe<Event> pEvent);
 
   @Override
