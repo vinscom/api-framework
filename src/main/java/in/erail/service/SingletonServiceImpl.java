@@ -3,10 +3,10 @@ package in.erail.service;
 import in.erail.glue.annotation.StartService;
 import io.reactivex.Completable;
 import io.reactivex.Single;
-import io.reactivex.schedulers.Schedulers;
 import io.vertx.core.spi.cluster.ClusterManager;
 import io.vertx.core.spi.cluster.NodeListener;
 import io.vertx.reactivex.core.Vertx;
+import java.util.Optional;
 import org.apache.logging.log4j.Logger;
 
 /**
@@ -29,8 +29,32 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
       return;
     }
 
-    allowServiceToStart()
-            .subscribeOn(Schedulers.io())
+    Single
+            .just(Optional.<String>empty())
+            .flatMapCompletable(this::init)
+            .subscribe();
+  }
+
+  protected Completable init(Optional<String> pOldNodeID) {
+    final String serviceName = getServiceName();
+    final String thisNodeId = getClusterManager().getNodeID();
+
+    return Single
+            .just(getServiceMapName())
+            .flatMap(name -> getVertx().sharedData().<String, String>rxGetClusterWideMap(name))
+            .flatMap(m -> {
+              if (pOldNodeID.isPresent()) {
+                return m
+                        .rxReplaceIfPresent(getServiceName(), pOldNodeID.get(), thisNodeId)
+                        .map(v -> v ? thisNodeId : "");
+              }
+              return m
+                      .rxPutIfAbsent(serviceName, thisNodeId)
+                      .switchIfEmpty(Single.just(thisNodeId));
+            })
+            .doOnSuccess(serviceOwnerId -> getLog().debug(() -> "Service Owner ID:" + serviceOwnerId + ", This Node ID:" + thisNodeId))
+            .map(serviceOwnerId -> thisNodeId.equals(serviceOwnerId))
+            .doOnSuccess(t -> getLog().debug(() -> "Service Start Decision:" + getServiceName() + ":" + t))
             .flatMapCompletable((success) -> {
               if (success) {
                 getLog().info(String.format("Starting Service:[%s]", getServiceName()));
@@ -38,22 +62,8 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
                         .doOnComplete(() -> getLog().info(String.format("Service:[%s] started", getServiceName())));
               }
               return Completable.complete();
-            })
-            .blockingAwait();
-  }
+            });
 
-  protected Single<Boolean> allowServiceToStart() {
-    final String serviceName = getServiceName();
-    final String value = getClusterManager().getNodeID();
-
-    return getVertx()
-            .sharedData()
-            .<String, String>rxGetClusterWideMap(getServiceMapName())
-            .flatMapMaybe(m -> m.rxPutIfAbsent(serviceName, value))
-            .toSingle(value)
-            .doOnSuccess(serviceOwnerId -> getLog().debug(() -> "Service Owner ID:" + serviceOwnerId + ", This Node ID:" + value))
-            .map(serviceOwnerId -> getClusterManager().getNodeID().equals(serviceOwnerId))
-            .doOnSuccess(t -> getLog().debug(() -> "Service Start Decision:" + getServiceName() + ":" + t));
   }
 
   @Override
@@ -67,20 +77,10 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
       return;
     }
 
-    getVertx()
-            .sharedData()
-            .<String, String>rxGetClusterWideMap(getServiceMapName())
-            .subscribeOn(Schedulers.io())
-            .flatMap((m) -> m.rxReplaceIfPresent(getServiceName(), pNodeID, getClusterManager().getNodeID()))
-            .flatMapCompletable((success) -> {
-              if (success) {
-                getLog().info(String.format("Starting Service:[%s] becuase of cluster state update", getServiceName()));
-                return startService()
-                        .doOnComplete(() -> getLog().info(String.format("Service:[%s] start complete because of cluster state update", getServiceName())));
-              }
-              return Completable.complete();
-            })
-            .blockingAwait();
+    Single
+            .just(Optional.of(pNodeID))
+            .flatMapCompletable(this::init)
+            .subscribe();
   }
 
   public Vertx getVertx() {

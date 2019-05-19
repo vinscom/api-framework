@@ -50,7 +50,7 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<E
               .eventBus()
               .<JsonObject>consumer(getServiceUniqueId())
               .toFlowable()
-              .subscribeOn(getScheduler())
+              .observeOn(getScheduler())
               .flatMapSingle(this::handleRequest)
               .doOnSubscribe((s) -> getLog().info(() -> String.format("%s[%s] service started", getServiceUniqueId(), Thread.currentThread().getName())))
               .doOnTerminate(() -> getLog().info(() -> String.format("%s[%s] service stopped", getServiceUniqueId(), Thread.currentThread().getName())))
