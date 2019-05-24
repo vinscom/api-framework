@@ -6,6 +6,7 @@ package in.erail.security;
  */
 import in.erail.glue.annotation.StartService;
 import io.reactivex.Single;
+import io.vertx.core.eventbus.EventBusOptions;
 import io.vertx.reactivex.core.Vertx;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -13,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import javax.crypto.BadPaddingException;
@@ -36,20 +38,23 @@ public class SecurityTools {
   public void startup() {
 
     setRandom(new SecureRandom());
+    
+    if (getVertx().isClustered()) {
+      byte[] key = generateKey().get();
+      addValueToClusterMap("key", key)
+              .subscribe((k) -> {
+                String unique = Base64.getEncoder().encodeToString(Arrays.copyOfRange(k, 0, 5));
+                mGlobalUniqueString.complete(unique.replace("=", ""));
+                getLog().info(() -> String.format("GlobalUniqueString:[%s]", unique));
 
-    if (!getVertx().isClustered()) {
-      mGlobalUniqueString.complete("A" + mRandom.nextInt());
-      return;
+                mKeySpec.complete(new SecretKeySpec(k, "AES"));
+              });
+    } else {
+      byte[] k = generateKey().get();
+      String unique = Base64.getEncoder().encodeToString(Arrays.copyOfRange(k, 0, 5));
+      mGlobalUniqueString.complete(unique.replace("=", ""));
+      mKeySpec.complete(new SecretKeySpec(k, "AES"));
     }
-
-    generateKey()
-            .flatMap(v -> addValueToClusterMap("key", v))
-            .subscribe((key) -> {
-              mKeySpec.complete(new SecretKeySpec(key, "AES"));
-              String unique = Base64.getEncoder().encodeToString(Arrays.copyOfRange(key, 0, 5));
-              mGlobalUniqueString.complete(unique.replace("=", ""));
-              getLog().info(() -> String.format("GlobalUniqueString:[%s]", unique));
-            });
   }
 
   protected Single<byte[]> addValueToClusterMap(String pKey, byte[] pValue) {
@@ -60,15 +65,15 @@ public class SecurityTools {
             .toSingle(pValue);
   }
 
-  protected Single<byte[]> generateKey() {
-    KeyGenerator keygen;
+  protected Optional<byte[]> generateKey() {
     try {
-      keygen = KeyGenerator.getInstance("AES");
+      KeyGenerator keygen = KeyGenerator.getInstance("AES");
+      keygen.init(128);
+      return Optional.of(keygen.generateKey().getEncoded());
     } catch (NoSuchAlgorithmException ex) {
-      return Single.error(ex);
+      getLog().error(ex);
     }
-    keygen.init(128);
-    return Single.just(keygen.generateKey().getEncoded());
+    return Optional.empty();
   }
 
   /**
