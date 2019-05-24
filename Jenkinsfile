@@ -1,18 +1,38 @@
 pipeline {
   agent any
   stages {
-    stage('install') {
+    stage('Build and Test') {
       steps {
          withSonarQubeEnv('SonarCloud') {
             withMaven(maven: 'M3') {
-               sh "mvn clean install sonar:sonar -Dsonar.projectKey=vinscom_api-framework -Dsonar.organization=vinscom-github -Dsonar.branch.name=${GIT_BRANCH}"
+               sh "mvn clean package sonar:sonar -Dsonar.projectKey=vinscom_api-framework -Dsonar.organization=vinscom-github -Dsonar.branch.name=${GIT_BRANCH}"
             }
+            junit 'target/surefire-reports/TEST-*.xml'
          }
       }
     }
-    stage("Quality Gate") {
+    stage('Deploy Snapshot') {
+      when {
+        branch 'master'
+      }
       steps {
-         junit '**/target/surefire-reports/TEST-*.xml'
+        withMaven(maven: 'M3') {
+          sh "mvn deploy -P pgp,release"
+        }
+      }
+    }
+    stage('Deploy Release') {
+      when {
+        expression {
+          env.TAG_NAME =~ /[0-9]+.[0-9]+.[0-9]+/
+        }
+      }
+      steps {
+        withMaven(maven: 'M3') {
+          sh "mvn versions:set -DnewVersion=${TAG_NAME}"
+          sh "mvn deploy -P pgp,release"
+          sh "mvn nexus-staging:release -P pgp,release"
+        }
       }
     }
   }

@@ -6,18 +6,24 @@ import java.util.concurrent.ExecutionException;
 import in.erail.glue.annotation.StartService;
 import io.reactivex.plugins.RxJavaPlugins;
 import io.vertx.reactivex.core.RxHelper;
+import org.apache.logging.log4j.Logger;
 
 public class VertxInstance {
 
+  private Logger mLog;
   private VertxOptions mVertxOptions;
-  private boolean mClusterEnable = true;
   private final CompletableFuture<Vertx> mVertx = new CompletableFuture<>();
 
   @StartService
   public void start() {
-    if (isClusterEnable()) {
-      Vertx.rxClusteredVertx(getVertxOptions()).subscribe((t) -> mVertx.complete(t));
+    if (getVertxOptions().getEventBusOptions().isClustered()) {
+      getLog().info(() -> "Starting Vertx in Cluster Mode");
+      Vertx
+              .rxClusteredVertx(getVertxOptions())
+              .doOnSuccess(v -> getLog().info(() -> "Vertx is running in cluster mode"))
+              .subscribe((t) -> mVertx.complete(t));
     } else {
+      getLog().info(() -> "Starting Vertx in Cluster Mode");
       mVertx.complete(Vertx.vertx(getVertxOptions()));
     }
 
@@ -39,12 +45,12 @@ public class VertxInstance {
     this.mVertxOptions = pVertxOptions;
   }
 
-  public boolean isClusterEnable() {
-    return mClusterEnable;
+  public Logger getLog() {
+    return mLog;
   }
 
-  public void setClusterEnable(boolean pClusterEnable) {
-    this.mClusterEnable = pClusterEnable;
+  public void setLog(Logger pLog) {
+    this.mLog = pLog;
   }
 
 }
