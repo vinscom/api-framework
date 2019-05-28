@@ -2,14 +2,13 @@ package in.erail.route;
 
 import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
-import in.erail.common.FrameworkConstants;
+import in.erail.route.oidc.LocalAuthenticator;
 import io.netty.handler.codec.http.HttpScheme;
 
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.ext.auth.AuthProvider;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
-import io.vertx.reactivex.ext.web.Session;
 
 public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
@@ -19,6 +18,7 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
   private boolean mEnableProxy;
   private String mSuccessPath;
   private String mFailPath;
+  private LocalAuthenticator mLocalAuthenticater;
 
   public void handle(RoutingContext pRoutingCoutext) {
 
@@ -31,27 +31,9 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
     getAuthProvider()
             .rxAuthenticate(tokenConfig)
-            .doOnSuccess((u) -> {
-              Session session = pRoutingCoutext.session();
-
-              if (session == null) {
-
-                getLog().error(() -> "Session not found");
-
-                pRoutingCoutext
-                        .response()
-                        .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
-                        .setStatusCode(302)
-                        .end();
-                return;
-              }
-
-              session = session.regenerateId();
-
-              //Session session = pRoutingCoutext.session().regenerateId();
-              session.put(FrameworkConstants.Session.PRINCIPAL, u.getDelegate());
+            .flatMapCompletable(u -> getLocalAuthenticater().authenticate(pRoutingCoutext, u))
+            .doOnComplete(() -> {
               getLog().debug(() -> "Success URL:" + getSuccessURL(pRoutingCoutext));
-
               pRoutingCoutext
                       .response()
                       .putHeader(HttpHeaders.LOCATION, getSuccessURL(pRoutingCoutext))
@@ -59,9 +41,7 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
                       .end();
             })
             .doOnError((err) -> {
-              getLog().error(err);
-              getLog().debug(() -> "Fail URL:" + getFailURL(pRoutingCoutext));
-
+              getLog().error("Fail URL:" + getFailURL(pRoutingCoutext), err);
               pRoutingCoutext
                       .response()
                       .putHeader(HttpHeaders.LOCATION, getFailURL(pRoutingCoutext))
@@ -182,6 +162,14 @@ public class OIDCCallbackRouteBuilder extends AbstractRouterBuilderImpl {
 
   public void setAuthProvider(AuthProvider pAuthProvider) {
     this.mAuthProvider = pAuthProvider;
+  }
+
+  public LocalAuthenticator getLocalAuthenticater() {
+    return mLocalAuthenticater;
+  }
+
+  public void setLocalAuthenticater(LocalAuthenticator pLocalAuthenticater) {
+    this.mLocalAuthenticater = pLocalAuthenticater;
   }
 
 }
