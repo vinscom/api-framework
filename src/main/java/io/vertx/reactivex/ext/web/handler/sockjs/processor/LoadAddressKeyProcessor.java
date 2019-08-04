@@ -20,7 +20,7 @@ public class LoadAddressKeyProcessor implements BridgeEventProcessor {
     return pContext
             .map((ctx) -> {
 
-              if(ctx.getBridgeEvent().failed()){
+              if(ctx.getBridgeEvent().future().failed()){
                 return ctx;
               }
               

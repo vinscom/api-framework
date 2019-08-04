@@ -88,7 +88,7 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
             .reduce(Single.just(ctx), (acc, processor) -> processor.process(acc))
             .flatMap((context) -> context)
             .doFinally(() -> {
-              if (ctx.getBridgeEvent().failed()) {
+              if (ctx.getBridgeEvent().future().failed()) {
                 getLog().debug(() -> String.format("[%s] BridgeEvent Failed: [%s]", ctx.getId(), ctx.getBridgeEvent().getRawMessage()));
                 return;
               }

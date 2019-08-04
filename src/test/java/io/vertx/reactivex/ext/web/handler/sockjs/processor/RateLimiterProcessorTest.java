@@ -15,6 +15,7 @@ import io.reactivex.Single;
 import io.vertx.ext.bridge.BridgeEventType;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import io.vertx.reactivex.core.Future;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEvent;
 import io.vertx.reactivex.ext.web.handler.sockjs.BridgeEventContext;
 import io.vertx.reactivex.ext.web.handler.sockjs.SockJSSocket;
@@ -39,6 +40,7 @@ public class RateLimiterProcessorTest {
     when(be.type()).thenReturn(BridgeEventType.SEND);
     when(be.socket()).thenReturn(socket);
     when(socket.writeHandlerID()).thenReturn("FAKE_HANDLE");
+    when(be.future()).thenReturn(Future.succeededFuture());
 
     bec.setBridgeEvent(be);
 
@@ -49,7 +51,7 @@ public class RateLimiterProcessorTest {
               verify(be, times(10)).fail(anyString());
             })
             .ignoreElements()
-            .subscribe(() -> testContext.completeNow(),err -> testContext.failNow(err));
+            .subscribe(() -> testContext.completeNow(), (err) -> testContext.failNow(err));
   }
 
   @Test
@@ -65,6 +67,7 @@ public class RateLimiterProcessorTest {
     when(be.type()).thenReturn(BridgeEventType.PUBLISH);
     when(be.socket()).thenReturn(socket);
     when(socket.writeHandlerID()).thenReturn("FAKE_HANDLE");
+    when(be.future()).thenReturn(Future.succeededFuture());
 
     bec.setBridgeEvent(be);
 
@@ -75,6 +78,6 @@ public class RateLimiterProcessorTest {
               verify(be, times(70)).fail(anyString());
             })
             .ignoreElements()
-            .subscribe(() -> testContext.completeNow(),err -> testContext.failNow(err));
+            .subscribe(() -> testContext.completeNow(), err -> testContext.failNow(err));
   }
 }

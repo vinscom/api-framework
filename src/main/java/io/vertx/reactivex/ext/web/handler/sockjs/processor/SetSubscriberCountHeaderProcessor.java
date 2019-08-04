@@ -38,7 +38,7 @@ public class SetSubscriberCountHeaderProcessor implements BridgeEventProcessor {
     return pContext
             .flatMap((ctx) -> {
 
-              if (ctx.getBridgeEvent().failed()) {
+              if (ctx.getBridgeEvent().future().failed()) {
                 return Single.just(ctx);
               }
 

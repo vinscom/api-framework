@@ -54,7 +54,7 @@ public class RateLimiterProcessor implements BridgeEventProcessor {
     return pContext
             .map((ctx) -> {
 
-              if (ctx.getBridgeEvent().failed() || !isEnable()) {
+              if (ctx.getBridgeEvent().future().failed() || !isEnable()) {
                 return ctx;
               }
 
