@@ -1,13 +1,5 @@
 package in.erail.security;
 
-/**
- *
- * @author vinay
- */
-import in.erail.glue.annotation.StartService;
-import io.reactivex.Single;
-import io.vertx.core.eventbus.EventBusOptions;
-import io.vertx.reactivex.core.Vertx;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -17,6 +9,7 @@ import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -24,7 +17,16 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+
 import org.apache.logging.log4j.Logger;
+
+/**
+ *
+ * @author vinay
+ */
+import in.erail.glue.annotation.StartService;
+import io.reactivex.Single;
+import io.vertx.reactivex.core.Vertx;
 
 public class SecurityTools {
 

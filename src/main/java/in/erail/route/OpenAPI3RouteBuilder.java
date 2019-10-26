@@ -1,5 +1,16 @@
 package in.erail.route;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.Metered;
 import com.codahale.metrics.MetricRegistry;
@@ -10,35 +21,25 @@ import com.google.common.base.Strings;
 import com.google.common.io.Files;
 import com.google.common.net.HttpHeaders;
 import com.google.common.net.MediaType;
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-import static in.erail.common.FrameworkConstants.RoutingContext.Json;
+import in.erail.common.FrameworkConstants.RoutingContext.Json;
 import in.erail.glue.annotation.StartService;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
+import in.erail.service.RESTService;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.reactivex.Observable;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.MultiMap;
+import io.vertx.reactivex.core.buffer.Buffer;
+import io.vertx.reactivex.core.http.Cookie;
+import io.vertx.reactivex.core.http.HttpServerRequest;
 import io.vertx.reactivex.core.http.HttpServerResponse;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.RoutingContext;
 import io.vertx.reactivex.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
-import in.erail.service.RESTService;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.reactivex.Observable;
-import io.vertx.reactivex.core.buffer.Buffer;
-import io.vertx.reactivex.core.http.HttpServerRequest;
-import io.vertx.reactivex.ext.web.Cookie;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Optional;
-import java.util.UUID;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 /**
  *
@@ -103,7 +104,7 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
 
     getVertx()
             .eventBus()
-            .send(pServiceUniqueId,
+            .request(pServiceUniqueId,
                     serialiseRoutingContext(pRequestContext),
                     getDeliveryOptions(),
                     (reply) -> {
@@ -304,30 +305,6 @@ public class OpenAPI3RouteBuilder extends AbstractRouterBuilderImpl {
                           routingContext
                                   .response()
                                   .setStatusCode(respStatusCode)
-                                  .end(generateErrorResponse(routingContext));
-                        });
-                        apiFactory.setValidationFailureHandler((routingContext) -> {
-                          int respStatusCode = routingContext.statusCode();
-                          if (respStatusCode == -1) {
-                            respStatusCode = 400;
-                          }
-
-                          getLog().debug(() -> "API Validation Failer Handle called:" + service.getOperationId() + ":" + generateErrorResponse(routingContext));
-                          getLog().trace(() -> dumpRequest(routingContext.request()));
-
-                          routingContext
-                                  .response()
-                                  .setStatusCode(respStatusCode)
-                                  .end(generateErrorResponse(routingContext));
-                        });
-                        apiFactory.setNotImplementedFailureHandler((routingContext) -> {
-
-                          getLog().debug(() -> "API not implemented:" + service.getOperationId() + ":" + generateErrorResponse(routingContext));
-                          getLog().trace(() -> dumpRequest(routingContext.request()));
-
-                          routingContext
-                                  .response()
-                                  .setStatusCode(HttpResponseStatus.BAD_REQUEST.code())
                                   .end(generateErrorResponse(routingContext));
                         });
                       });

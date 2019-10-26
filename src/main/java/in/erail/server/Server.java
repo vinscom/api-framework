@@ -8,7 +8,6 @@ import io.vertx.reactivex.core.Vertx;
 import io.vertx.reactivex.core.http.HttpServer;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.handler.LoggerHandler;
-import io.vertx.reactivex.ext.web.handler.sockjs.SockJSHandler;
 import in.erail.glue.Glue;
 import in.erail.glue.annotation.StartService;
 
@@ -23,7 +22,6 @@ public class Server {
   private String[] mMountPath;
   private Router[] mRouter;
   private Logger mLog;
-  private SockJSHandler mSockJSHandler;
   private HttpServerOptions mHttpServerOptions;
   private HttpServer mHttpServer;
 
@@ -37,10 +35,6 @@ public class Server {
     // Logging
     if (getLog().isDebugEnabled()) {
       router.route("/*").handler(LoggerHandler.create());
-    }
-
-    if (getSockJSHandler() != null) {
-      router.route("/eventbus/*").handler(getSockJSHandler());
     }
 
     for (int i = 0; i < mMountPath.length; i++) {
@@ -89,14 +83,6 @@ public class Server {
 
   public void setLog(Logger pLog) {
     this.mLog = pLog;
-  }
-
-  public SockJSHandler getSockJSHandler() {
-    return mSockJSHandler;
-  }
-
-  public void setSockJSHandler(SockJSHandler pSockJSHandler) {
-    this.mSockJSHandler = pSockJSHandler;
   }
 
   public HttpServerOptions getHttpServerOptions() {

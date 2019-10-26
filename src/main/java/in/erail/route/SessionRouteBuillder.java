@@ -3,7 +3,6 @@ package in.erail.route;
 import io.vertx.reactivex.ext.web.Route;
 import io.vertx.reactivex.ext.web.Router;
 import io.vertx.reactivex.ext.web.handler.BodyHandler;
-import io.vertx.reactivex.ext.web.handler.CookieHandler;
 import io.vertx.reactivex.ext.web.handler.SessionHandler;
 import io.vertx.reactivex.ext.web.sstore.SessionStore;
 
@@ -28,7 +27,6 @@ public class SessionRouteBuillder extends AbstractRouterBuilderImpl {
   public Router getRouter(Router pRouter) {
     Route route = pRouter.route();
     route.handler(BodyHandler.create());
-    route.handler(CookieHandler.create());
     if (isEnableSession()) {
       route.handler(SessionHandler.create(getSessionStore()));
       getLog().info("Session Store Enabled");

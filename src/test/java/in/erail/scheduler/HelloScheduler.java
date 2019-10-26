@@ -32,7 +32,7 @@ public class HelloScheduler extends QuartzJob {
   @Override
   public void execute(JobExecutionContext pArg0) throws JobExecutionException {
     if (mVertxTestContext != null) {
-      Optional data = Optional.ofNullable(pArg0.getJobDetail().getJobDataMap().get(QuartzJob.JOB_DATA_AUX));
+      Optional<?> data = Optional.ofNullable(pArg0.getJobDetail().getJobDataMap().get(QuartzJob.JOB_DATA_AUX));
       if (data.isPresent()) {
         mVertxTestContext.completeNow();
       } else {

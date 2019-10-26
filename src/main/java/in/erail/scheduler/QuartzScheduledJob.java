@@ -1,9 +1,9 @@
 package in.erail.scheduler;
 
-import io.vertx.core.json.JsonObject;
-import java.util.Optional;
 import org.quartz.ScheduleBuilder;
 import org.quartz.Trigger;
+
+import io.vertx.core.json.JsonObject;
 
 /**
  *

@@ -1,9 +1,10 @@
 package io.vertx.reactivex.ext.web.handler.sockjs;
 
-import io.vertx.core.json.Json;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.bridge.BridgeEventType;
 import java.io.IOException;
+
+import io.vertx.core.json.JsonObject;
+import io.vertx.core.json.jackson.DatabindCodec;
+import io.vertx.ext.bridge.BridgeEventType;
 
 /**
  *
@@ -48,7 +49,7 @@ public class BridgeEventUpdate {
   }
 
   public static BridgeEventUpdate parse(JsonObject pJson) throws IOException {
-    return Json.mapper.readValue(pJson.encode(), BridgeEventUpdate.class);
+    return DatabindCodec.mapper().readValue(pJson.encode(), BridgeEventUpdate.class);
   }
 
   @Override

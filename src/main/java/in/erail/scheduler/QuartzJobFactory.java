@@ -101,14 +101,6 @@ public class QuartzJobFactory implements JobFactory {
 
         Object parm = null;
         if (paramType.isPrimitive()) {
-          if (o == null) {
-            handleError(
-                    "Cannot set primitive property '" + name
-                    + "' on Job class " + obj.getClass().getName()
-                    + " to null.");
-            continue;
-          }
-
           if (paramType.equals(int.class)) {
             if (o instanceof String) {
               parm = Integer.valueOf((String) o);

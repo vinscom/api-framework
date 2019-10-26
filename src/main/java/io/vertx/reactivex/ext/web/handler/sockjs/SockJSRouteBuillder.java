@@ -1,26 +1,26 @@
 package io.vertx.reactivex.ext.web.handler.sockjs;
 
 import in.erail.glue.annotation.StartService;
+import in.erail.route.AbstractRouterBuilderImpl;
 import io.vertx.core.Handler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandlerOptions;
 import io.vertx.ext.web.handler.sockjs.Transport;
-import io.vertx.reactivex.core.Vertx;
+import io.vertx.reactivex.ext.web.Router;
 
 /**
  *
  * @author vinay
  */
-public class SockJSHandlerInstance {
+public class SockJSRouteBuillder  extends AbstractRouterBuilderImpl {
 
-  private Vertx mVertx;
   private BridgeOptions mBridgeOptions;
   private Handler<BridgeEvent> mBridgeEventHandler;
-  private SockJSHandler mSockJSHandler;
+  private Router mSockJSRouter;
 
   @StartService
   public void start() {
-    
+
     // Eventbus handle
     SockJSHandlerOptions sockJSHandlerOptions = (new SockJSHandlerOptions())
             .addDisabledTransport(Transport.EVENT_SOURCE.toString())
@@ -29,17 +29,9 @@ public class SockJSHandlerInstance {
             .addDisabledTransport(Transport.XHR.toString())
             .setInsertJSESSIONID(false);
 
-     mSockJSHandler = SockJSHandler
+    mSockJSRouter = SockJSHandler
             .create(getVertx(), sockJSHandlerOptions)
             .bridge(getBridgeOptions(), getBridgeEventHandler());
-  }
-
-  public Vertx getVertx() {
-    return mVertx;
-  }
-
-  public void setVertx(Vertx pVertx) {
-    this.mVertx = pVertx;
   }
 
   public BridgeOptions getBridgeOptions() {
@@ -58,8 +50,9 @@ public class SockJSHandlerInstance {
     this.mBridgeEventHandler = pBridgeEventHandler;
   }
 
-  public SockJSHandler create() {
-    return mSockJSHandler;
+  @Override
+  public Router getRouter(Router pRouter) {
+    return mSockJSRouter;
   }
 
 }
