@@ -9,7 +9,6 @@ import java.util.UUID;
 import org.apache.logging.log4j.Logger;
 
 /**
- *
  * @author vinay
  */
 public class BridgeEventHandler implements Handler<BridgeEvent> {
@@ -24,10 +23,15 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
   private BridgeEventProcessor[] mSocketIdleProcessors;
   private BridgeEventProcessor[] mSoketPingProcessors;
   private BridgeEventProcessor[] mUnregisterProcessors;
-  private Meter mMetricsBridgeEventSend;
+
   private Meter mMetricsBridgeEventPublish;
   private Meter mMetricsBridgeEventReceive;
   private Meter mMetricsBridgeEventRegister;
+  private Meter mMetricsBridgeEventSend;
+  private Meter mMetricsBridgeEventSocketClosed;
+  private Meter mMetricsBridgeEventSocketCreated;
+  private Meter mMetricsBridgeEventSocketIdle;
+  private Meter mMetricsBridgeEventSocketPing;
   private Meter mMetricsBridgeEventUnregister;
 
   @Override
@@ -51,15 +55,19 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
         process(getSendProcessors(), pEvent);
         break;
       case SOCKET_CLOSED:
+        getMetricsBridgeEventSocketClosed().mark();
         process(getSocketClosedProcessors(), pEvent);
         break;
       case SOCKET_CREATED:
+        getMetricsBridgeEventSocketCreated().mark();
         process(getSocketCreatedProcessors(), pEvent);
         break;
       case SOCKET_IDLE:
+        getMetricsBridgeEventSocketIdle().mark();
         process(getSocketIdleProcessors(), pEvent);
         break;
       case SOCKET_PING:
+        getMetricsBridgeEventSocketPing().mark();
         process(getSoketPingProcessors(), pEvent);
         break;
       case UNREGISTER:
@@ -217,6 +225,38 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
 
   public void setMetricsBridgeEventUnregister(Meter pMetricsBridgeEventUnregister) {
     this.mMetricsBridgeEventUnregister = pMetricsBridgeEventUnregister;
+  }
+
+  public Meter getMetricsBridgeEventSocketClosed() {
+    return mMetricsBridgeEventSocketClosed;
+  }
+
+  public void setMetricsBridgeEventSocketClosed(Meter pMetricsBridgeEventSocketClosed) {
+    this.mMetricsBridgeEventSocketClosed = pMetricsBridgeEventSocketClosed;
+  }
+
+  public Meter getMetricsBridgeEventSocketCreated() {
+    return mMetricsBridgeEventSocketCreated;
+  }
+
+  public void setMetricsBridgeEventSocketCreated(Meter pMetricsBridgeEventSocketCreated) {
+    this.mMetricsBridgeEventSocketCreated = pMetricsBridgeEventSocketCreated;
+  }
+
+  public Meter getMetricsBridgeEventSocketIdle() {
+    return mMetricsBridgeEventSocketIdle;
+  }
+
+  public void setMetricsBridgeEventSocketIdle(Meter pMetricsBridgeEventSocketIdle) {
+    this.mMetricsBridgeEventSocketIdle = pMetricsBridgeEventSocketIdle;
+  }
+
+  public Meter getMetricsBridgeEventSocketPing() {
+    return mMetricsBridgeEventSocketPing;
+  }
+
+  public void setMetricsBridgeEventSocketPing(Meter pMetricsBridgeEventSocketPing) {
+    this.mMetricsBridgeEventSocketPing = pMetricsBridgeEventSocketPing;
   }
 
 }
