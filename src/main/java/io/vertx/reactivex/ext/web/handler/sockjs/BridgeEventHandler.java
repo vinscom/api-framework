@@ -37,6 +37,11 @@ public class BridgeEventHandler implements Handler<BridgeEvent> {
   @Override
   public void handle(BridgeEvent pEvent) {
 
+    getLog().trace(() -> String.format("Event Type:[%s],URI:[%s],WriteHandlerID:[%s]", 
+            pEvent.type().toString(), 
+            pEvent.getDelegate().socket().uri(), 
+            pEvent.getDelegate().socket().writeHandlerID()));
+
     switch (pEvent.type()) {
       case PUBLISH:
         getMetricsBridgeEventPublish().mark();
