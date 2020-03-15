@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.reactivex.core.Vertx;
 import org.apache.logging.log4j.Logger;
 import in.erail.glue.annotation.StartService;
+import in.erail.glue.common.Util;
 import in.erail.model.Event;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
@@ -43,7 +44,7 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<E
   @StartService
   public void start() throws InstantiationException, IllegalAccessException {
 
-    mDefaultEvent = new Event(getRequestEventClass().newInstance(), getResponseEventClass().newInstance());
+    mDefaultEvent = new Event(Util.createInstance(getRequestEventClass()), Util.createInstance(getResponseEventClass()));
 
     if (mEnable) {
       getVertx()
@@ -70,7 +71,7 @@ public abstract class RESTServiceImpl implements RESTService, MaybeTransformer<E
             .map(resp -> JsonObject.mapFrom(resp.getResponse()))
             .doOnSuccess(resp -> pMessage.reply(resp))
             .doOnError(err -> {
-              ResponseEvent resp = getResponseEventClass().newInstance();
+              ResponseEvent resp = Util.createInstance(getResponseEventClass());
 
               if (CustomException.class.isAssignableFrom(err.getClass())) {
                 CustomException cerr = (CustomException) err;

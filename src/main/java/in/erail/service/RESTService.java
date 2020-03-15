@@ -1,5 +1,6 @@
 package in.erail.service;
 
+import in.erail.glue.common.Util;
 import in.erail.model.Event;
 import in.erail.model.RequestEvent;
 import in.erail.model.ResponseEvent;
@@ -24,7 +25,7 @@ public interface RESTService {
   }
 
   default Event createEvent(RequestEvent pRequest) throws InstantiationException, IllegalAccessException {
-    return new Event(pRequest, getResponseEventClass().newInstance());
+    return new Event(pRequest, Util.createInstance(getResponseEventClass()));
   }
 
   Maybe<Event> handleEvent(Event pEvent);
