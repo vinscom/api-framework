@@ -2,7 +2,7 @@ package io.vertx.reactivex.ext.web.handler.sockjs;
 
 import in.erail.route.AbstractRouterBuilderImpl;
 import io.vertx.core.Handler;
-import io.vertx.ext.web.handler.sockjs.BridgeOptions;
+import io.vertx.ext.web.handler.sockjs.SockJSBridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandlerOptions;
 import io.vertx.ext.web.handler.sockjs.Transport;
 import io.vertx.reactivex.ext.web.Router;
@@ -13,14 +13,14 @@ import io.vertx.reactivex.ext.web.Router;
  */
 public class SockJSRouteBuillder extends AbstractRouterBuilderImpl {
 
-  private BridgeOptions mBridgeOptions;
+  private SockJSBridgeOptions mBridgeOptions;
   private Handler<BridgeEvent> mBridgeEventHandler;
 
-  public BridgeOptions getBridgeOptions() {
+  public SockJSBridgeOptions getBridgeOptions() {
     return mBridgeOptions;
   }
 
-  public void setBridgeOptions(BridgeOptions pBridgeOptions) {
+  public void setBridgeOptions(SockJSBridgeOptions pBridgeOptions) {
     this.mBridgeOptions = pBridgeOptions;
   }
 

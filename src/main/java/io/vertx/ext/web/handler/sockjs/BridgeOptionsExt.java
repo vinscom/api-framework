@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
  *
  * @author vinay
  */
-public class BridgeOptionsExt extends BridgeOptions {
+public class BridgeOptionsExt extends SockJSBridgeOptions {
 
   private Logger mLog;
   private List<String> mInboundAddress;
