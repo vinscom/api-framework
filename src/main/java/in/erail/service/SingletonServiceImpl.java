@@ -10,7 +10,6 @@ import java.util.Optional;
 import org.apache.logging.log4j.Logger;
 
 /**
- *
  * @author vinay
  */
 public abstract class SingletonServiceImpl implements NodeListener, SingletonService {
@@ -24,63 +23,55 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
 
   @StartService
   public void start() {
-
-    if (!isEnable()) {
-      return;
-    }
-
-    Single
-            .just(Optional.<String>empty())
-            .flatMapCompletable(this::init)
-            .subscribe();
+    getClusterManager().nodeListener(this);
+    init(Optional.empty())
+            .subscribe(() -> {
+            }, err -> getLog().error(err));
   }
 
-  protected Completable init(Optional<String> pOldNodeID) {
-    final String serviceName = getServiceName();
+  protected Completable init(Optional<String> pCurrentOwnerNodeId) {
+
+    if (!isEnable()) {
+      return Completable.complete();
+    }
+
+    return claimOwnership(pCurrentOwnerNodeId)
+            .filter(t -> t)
+            .flatMapCompletable(t -> startService())
+            .doOnComplete(() -> getLog().info("Service Started:" + getServiceName()));
+  }
+
+  protected Single<Boolean> claimOwnership(Optional<String> pCurrentOwnerNodeId) {
+
     final String thisNodeId = getClusterManager().getNodeID();
 
-    return Single
-            .just(getServiceMapName())
-            .flatMap(name -> getVertx().sharedData().<String, String>rxGetClusterWideMap(name))
-            .flatMap(m -> {
-              if (pOldNodeID.isPresent()) {
-                return m
-                        .rxReplaceIfPresent(getServiceName(), pOldNodeID.get(), thisNodeId)
-                        .map(v -> v ? thisNodeId : "");
+    return getVertx()
+            .sharedData()
+            .rxGetClusterWideMap(getServiceMapName())
+            .flatMap((m) -> {
+              if (pCurrentOwnerNodeId.isPresent()) {
+                return m.rxReplaceIfPresent(getServiceName(), pCurrentOwnerNodeId.get(), thisNodeId);
               }
               return m
-                      .rxPutIfAbsent(serviceName, thisNodeId)
-                      .switchIfEmpty(Single.just(thisNodeId));
-            })
-            .doOnSuccess(serviceOwnerId -> getLog().debug(() -> "Service Owner ID:" + serviceOwnerId + ", This Node ID:" + thisNodeId))
-            .map(serviceOwnerId -> thisNodeId.equals(serviceOwnerId))
-            .doOnSuccess(t -> getLog().debug(() -> "Service Start Decision:" + getServiceName() + ":" + t))
-            .flatMapCompletable((success) -> {
-              if (success) {
-                getLog().info(String.format("Starting Service:[%s]", getServiceName()));
-                return startService()
-                        .doOnComplete(() -> getLog().info(String.format("Service:[%s] started", getServiceName())));
-              }
-              return Completable.complete();
+                      .rxPutIfAbsent(getServiceName(), thisNodeId)
+                      .map(t -> false)
+                      .switchIfEmpty(Single.just(true));
             });
 
   }
 
   @Override
   public void nodeAdded(String pNodeID) {
+
   }
 
   @Override
   public void nodeLeft(String pNodeID) {
-
-    if (!isEnable()) {
-      return;
-    }
-
     Single
             .just(Optional.of(pNodeID))
             .flatMapCompletable(this::init)
-            .subscribe();
+            .subscribe(() -> {
+            }, err -> getLog().error(err));
   }
 
   public Vertx getVertx() {
@@ -130,5 +121,5 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
   public void setEnable(boolean pEnable) {
     this.mEnable = pEnable;
   }
-
+  
 }
