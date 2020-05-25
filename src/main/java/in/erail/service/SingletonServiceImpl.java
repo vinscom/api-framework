@@ -23,7 +23,11 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
 
   @StartService
   public void start() {
-    getClusterManager().nodeListener(this);
+    
+    if(getVertx().isClustered()){
+      getClusterManager().nodeListener(this);
+    }
+    
     init(Optional.empty())
             .subscribe(() -> {
             }, err -> getLog().error(err));
@@ -42,6 +46,10 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
   }
 
   protected Single<Boolean> claimOwnership(Optional<String> pCurrentOwnerNodeId) {
+
+    if (!getVertx().isClustered()) {
+      return Single.just(true);
+    }
 
     final String thisNodeId = getClusterManager().getNodeID();
 
@@ -121,5 +129,5 @@ public abstract class SingletonServiceImpl implements NodeListener, SingletonSer
   public void setEnable(boolean pEnable) {
     this.mEnable = pEnable;
   }
-  
+
 }
