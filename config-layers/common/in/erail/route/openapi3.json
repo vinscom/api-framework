@@ -4,19 +4,5 @@
     "title" : "API Framework",
     "version" : "1.0.0"
   },
-  "paths" : {
-    "/internal/healthcheck" : {
-      "get" : {
-        "tags" : [ "Health" ],
-        "summary" : "Health Check Status",
-        "description" : "Health Check Status",
-        "operationId" : "API_ERAIL_INTERNAL_HEALTH_CHECK_STATUS",
-        "responses" : {
-          "200" : {
-            "description" : "Health Status"
-          }
-        }
-      }
-    }
-  }
+  "paths" : {}
 }
